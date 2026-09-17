@@ -1,2 +1,2 @@
-# desarrollo-backend
-Repositorio utilizado para el curso de backend 1 - Coderhouse
+# Sistema de gestión de turnos
+Repositorio utilizado para el curso de backend - Coderhouse
