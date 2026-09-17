@@ -1,0 +1,24 @@
+{
+  "name": "sistema-de-gestion-de-turnos",
+  "version": "1.0.0",
+  "description": "Repositorio utilizado para el curso de backend - Coderhouse",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NahuelTeruel/Sistema-de-gestion-de-turnos.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/NahuelTeruel/Sistema-de-gestion-de-turnos/issues"
+  },
+  "homepage": "https://github.com/NahuelTeruel/Sistema-de-gestion-de-turnos#readme",
+  "dependencies": {
+    "dotenv": "^18.0.0"
+  }
+}
