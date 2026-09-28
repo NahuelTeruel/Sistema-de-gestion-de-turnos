@@ -2,11 +2,55 @@ import cryto from 'crypto';
 
 class ServiceManager {
     constructor() {
-        this.services = [{"id": "1", "name": "Mesa", "description": "Artículo convencional", "price": 50, "category": "Home", "available": true}];
+        this.services = [
+    {
+        id:1,
+        name: "Consulta psicologica",
+        description: "Servicio de consulta con un psicologo",
+        price: 30000,
+        duration:40,
+        available:true,
+        category: "psicología"
+    },
+    { 
+        id:2,
+        name: "Consulta medica",
+        description: "Servicio de consulta con un medico clinico",
+        price: 40000,
+        duration:30,
+        available:true,
+        category: "especialistas"
+
+    },
+    {
+        id:3,
+        name: "Consulta dermatologica",
+        description: "Servicio de consulta con un medico dermatologo",
+        price: 45000,
+        duration:30,
+        available:true,
+        category: "especialistas"
+    }
+]
     }
 
-    getServices() {
-        return this.services;
+    // filters: { category, available } (vienen de req.query, así que son strings)
+    getServices({ category, available } = {}) {
+        const result = this.services;
+ 
+        if (category !== undefined) {
+            result = result.filter(
+                service => service.category.toLowerCase() === String(category).toLowerCase()
+            );
+        }
+ 
+        if (available !== undefined) {
+            result = result.filter(
+                service => String(service.available) === String(available).toLowerCase()
+            );
+        }
+ 
+        return result;
     }
 
     getServiceById(id) {
@@ -44,8 +88,4 @@ class ServiceManager {
     }
 }
 
-const obj = new ServiceManager();
-obj.addService("Clinico", "Tratamientos en gral", 100, "Medicina", true)
-
-console.log(obj.getServices())
-console.log(obj.getServiceById("1"))
+export default ServiceManager;

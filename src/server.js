@@ -1,3 +1,8 @@
 import config from './config/config.js'; 
+import app from './app.js';
 
-console.log(config.port)
+const PORT = config.port;
+
+app.listen(PORT, () => {
+    console.log(`Servidor escuchando en el puerto ${PORT}`);
+});
