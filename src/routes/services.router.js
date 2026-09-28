@@ -30,21 +30,23 @@ router.post('/', (req, res) => {
     const missing = REQUIRED_FIELDS.filter(
         field => req.body[field] === undefined || req.body[field] === ''
     );
-
-    if (missing.length > 0) {
-        return res.status(400).json({
-            status: 'error',
-            message: `Faltan datos obligatorios: ${missing.join(', ')}`
-        });
-    }
-
-    // Se leen solo los campos permitidos: si viene un "id" en el body, se ignora
+    
     const { name, description, price, duration, available, category } = req.body;
+
+     if(!name || !duration ||!price || !category ){
+        return res.status(400).json({
+            status: "error",
+            message : "Faltan campos obligatorios"
+        })
+    }
     const newService = serviceManager.addService({
         name, description, price, duration, available, category
     });
 
-    res.status(201).json({ status: 'success', payload: newService });
+    res.status(201).json({ 
+        status: 'success',
+        message: 'Servicio agregado correctamente',
+        payload: newService });
 });
 
 // PUT /api/services/:sid

@@ -34,6 +34,7 @@ class ServiceManager {
 ]
     }
 
+    //GET
     // filters: { category, available } (vienen de req.query, así que son strings)
     getServices({ category, available } = {}) {
         const result = this.services;
@@ -52,11 +53,11 @@ class ServiceManager {
  
         return result;
     }
-
+    //GET:ID
     getServiceById(id) {
-        return this.services.find(service => service.id === id);
+        return this.services.find(service => String(service.id) === String(id));
     }
-
+    //POST
     addService(name, description, price, category, available) {
         const newService = {
             id: cryto.randomUUID(),
@@ -67,12 +68,13 @@ class ServiceManager {
             available 
         }
         this.services.push(newService);
+        return newService;
     }
-    
+    //PUT:ID
     updateService(id, data) {
         let service = this.getServiceById(id);
         if (!service) return null;
-        const index = this.services.findIndex(service => service.id === id)
+        const index = this.services.findIndex(service => String(service.id) === String(id))
         service = {
             ...service,
             ...data
@@ -80,9 +82,9 @@ class ServiceManager {
         this.services[index] = service;
         return service;
     }
-
+    //DELETE:ID
     deleteService(id) {
-        const index = this.services.findIndex(service => service.id === id);
+        const index = this.services.findIndex(service => String(service.id) === String(id));
         if (index === -1) return null
         return this.services.splice(index, 1)[0]
     }
