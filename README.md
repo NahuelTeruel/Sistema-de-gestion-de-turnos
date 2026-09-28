@@ -62,3 +62,37 @@ Ubicado en `src/managers/ServiceManager.js`, permite gestionar los servicios:
   "available": true
 }
 ```
+- Campos obligatorios: `name`, `price`, `category`, `available` por defecto es `true`.
+- Si se envía un `id` en el body, se ignora: siempre se genera internamente.
+## Ejecución
+
+```bash
+npm start       # producción
+```
+
+El servidor queda disponible en `http://localhost:[puerto definido en `.env`]`).
+
+## Endpoints
+
+Ruta base: `/api/services`
+
+| Método | Ruta | Descripción | Códigos |
+|--------|------|-------------|---------|
+| GET | `/api/services` | Devuelve todos los servicios. Acepta filtros por query params | `200` |
+| GET | `/api/services/:sid` | Devuelve un servicio por id | `200`, `404` |
+| POST | `/api/services` | Crea un servicio. El `id` se genera automáticamente | `201`, `400` |
+| PUT | `/api/services/:sid` | Actualiza un servicio. No permite modificar el `id` | `200`, `404` |
+| DELETE | `/api/services/:sid` | Elimina un servicio | `200`, `404` |
+
+### Filtros (GET /api/services)
+
+- `category`: filtra por categoría. Ej: `/api/services?category=Home`
+- `available`: filtra por disponibilidad. Ej: `/api/services?available=true`
+- Se pueden combinar: `/api/services?category=Home&available=true`
+
+
+
+## Notas
+
+- Los datos se guardan en memoria: al reiniciar el servidor se vuelve a la lista inicial de servicios.
+- Los ids de los servicios nuevos son UUID (texto), generados con el módulo `crypto` de Node.

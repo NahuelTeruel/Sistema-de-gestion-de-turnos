@@ -30,7 +30,7 @@ router.post('/', (req, res) => {
     const missing = REQUIRED_FIELDS.filter(
         field => req.body[field] === undefined || req.body[field] === ''
     );
-    
+
     const { name, description, price, duration, available, category } = req.body;
 
      if(!name || !duration ||!price || !category ){
@@ -40,7 +40,7 @@ router.post('/', (req, res) => {
         })
     }
     const newService = serviceManager.addService({
-        name, description, price, duration, available, category
+        name, description, price, duration, category, available: available ?? true
     });
 
     res.status(201).json({ 
