@@ -5,6 +5,9 @@ const PORT = config.port;
 
 const app = express();
 
+// Middleware para parsear el body de las solicitudes JSON
+app.use(express.json());
+
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en localhost:${PORT}`);
 });
@@ -54,5 +57,51 @@ app.get('/api/services', (req, res) => {const {category} = req.query
     res.status(200).json({
         status :"success",
         payload :services
+    })
+})
+
+
+//GET api/services/:sid
+app.get('/api/services/:sid', (req, res) => {
+    const id = Number(req.params.sid)
+    
+    const service = services.find(
+        service => service.id === id)
+    if (!service){
+        return res.status(404).json({
+            status:"error",
+            payload: "Servicio no encontrado"
+        })
+    }
+    res.status(200).json({
+        status:"success",
+        payload: service
+    })
+})
+
+//POST api/services
+app.post('/api/services', (req, res) => {
+   
+    const {name, description, price, duration, available, category} = req.body 
+
+    if (!name || !price || !duration || !category){
+        return res.status(400).json({
+            status:"error",
+            payload: "Faltan datos obligatorios"
+        })
+    }
+    const newService = {
+        id: services.length + 1,
+        name,
+        description,
+        price,
+        duration,
+        available : available ?? true,
+        category
+    }
+    services.push(newService)
+    res.status(201).json({
+        status:"success",
+        payload: newService
     })
 })
