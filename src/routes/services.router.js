@@ -2,21 +2,21 @@ import { Router } from 'express';
 import ServiceManager from '../managers/ServiceManager.js';
 
 const router = Router();
-const serviceManager = new ServiceManager();
+const serviceManager = new ServiceManager("./src/data/services.json");
 
 const REQUIRED_FIELDS = ['name', 'price', 'duration', 'category'];
 
 // GET /api/services?category=salud&available=true
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     const { category, available } = req.query;
-    const services = serviceManager.getServices({ category, available });
+    const services = await serviceManager.getServices({ category, available });
 
     res.status(200).json({ status: 'success', payload: services });
 });
 
 // GET /api/services/:sid
-router.get('/:sid', (req, res) => {
-    const service = serviceManager.getServiceById(req.params.sid);
+router.get('/:sid', async (req, res) => {
+    const service = await serviceManager.getServiceById(req.params.sid);
 
     if (!service) {
         return res.status(404).json({ status: 'error', message: 'Servicio no encontrado' });
@@ -26,8 +26,8 @@ router.get('/:sid', (req, res) => {
 });
 
 // POST /api/services
-router.post('/', (req, res) => {
-    const missing = REQUIRED_FIELDS.filter(
+router.post('/', async (req, res) => {
+    const missing = await REQUIRED_FIELDS.filter(
         field => req.body[field] === undefined || req.body[field] === ''
     );
 
@@ -39,7 +39,7 @@ router.post('/', (req, res) => {
             message : "Faltan campos obligatorios"
         })
     }
-    const newService = serviceManager.addService({
+    const newService = await serviceManager.addService({
         name, description, price, duration, category, available: available ?? true
     });
 

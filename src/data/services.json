@@ -1,0 +1,56 @@
+[
+  {
+    "id": 1,
+    "name": "Consulta psicologica",
+    "description": "Servicio de consulta con un psicologo",
+    "price": 30000,
+    "duration": 40,
+    "category": "psicología",
+    "available": true
+  },
+  {
+    "id": 2,
+    "name": "Consulta medica",
+    "description": "Servicio de consulta con un medico clinico",
+    "price": 40000,
+    "duration": 30,
+    "category": "especialistas",
+    "available": true
+  },
+  {
+    "id": 3,
+    "name": "Consulta dermatologica",
+    "description": "Servicio de consulta con un medico dermatologo",
+    "price": 45000,
+    "duration": 30,
+    "category": "especialistas",
+    "available": true
+  },
+  {
+    "id": "967de3b1-cad3-4639-8116-22b6d6125ca0",
+    "name": "Consulta alergista",
+    "description": "Servicio de consulta con alergista",
+    "price": 45000,
+    "duration": 45,
+    "category": "especialistas",
+    "available": true
+  },
+  {
+    "id": "187313e0-e070-4260-8208-85fc3a3ebe07",
+    "name": "Consulta test12",
+    "description": "Servicio de consulta con un psicologo",
+    "price": 30000,
+    "duration": 40,
+    "category": "psicología",
+    "available": true
+  },
+  {
+    "id": "9746067b-fc55-497b-a678-04f00d795938",
+    "name": "Consulta test14",
+    "description": "Servicio de consulta con un psicologo",
+    "price": 30000,
+    "duration": 40,
+    "category": "psicología",
+    "available": true
+  }
+]

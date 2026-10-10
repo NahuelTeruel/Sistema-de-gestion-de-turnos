@@ -1,6 +1,7 @@
 import express from 'express';
 import config from './config/config.js';
 import routes from './routes/services.router.js';
+//import ServiceManager from './managers/ServiceManager.js';
 
 const PORT = config.port;
 
@@ -11,5 +12,7 @@ const app = express();
 app.use(express.json());
 
 app.use('/api/services', routes);
+app.use('/api/bookings', routes);
+//const service = new ServiceManager("./src/data/services.json");
 
 export default app;
