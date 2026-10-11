@@ -1,12 +1,41 @@
-[{
+[
+  {
     "id": 1,
     "clientName": "Alberto Gonzalez",
     "clientEmail": "alberto.gonzalez@email.com",
     "date": "2026-10-15",
-    "time": 30,
+    "time": "08:45",
     "service": {
-        "id": 1,
-        "quantity": 2
-    }
+      "id": 1,
+      "quantity": 2
+    },
+    "services": [
+      {
+        "service": 2,
+        "quantity": 3
+      },
+      {
+        "service": 1,
+        "quantity": 1
+      },
+      {
+        "service": 3,
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "2",
+    "clientName": "Sofia Lorenzetti",
+    "clientEmail": "sofi.201@gmail.com",
+    "date": "2026-10-28",
+    "time": "15:40",
+    "status": "pendiente",
+    "services": [
+      {
+        "service": 3,
+        "quantity": 1
+      }
+    ]
   }
 ]

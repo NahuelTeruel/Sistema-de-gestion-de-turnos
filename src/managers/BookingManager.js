@@ -11,72 +11,65 @@ class BookingManager {
                 return JSON.parse(data) //json -> objeto
         }
     
-        
-        async #writeBookings(bookings) {
-            await fs.writeFile(this.path, JSON.stringify(bookings, null, 2), 'utf-8');
-        }
-    
-        //GET
-        // filters: { category, available } (vienen de req.query, así que son strings)
-        async getBookings({ category, available } = {}) {
-            let result = await this.#readBookings();
-     
-            if (category !== undefined) {
-                result = result.filter(
-                    booking => booking.category.toLowerCase() === String(category).toLowerCase()
-                );
-            }
-            
-            if (available !== undefined) {
-                result = result.filter(
-                    booking => String(booking.available) === String(available).toLowerCase()
-                );
-            }
-            
-            return result;
-        }
-        //GET:ID
-        async getBookingById(id) {
-            const bookings = await this.#readBookings();
-            return bookings.find(booking => String(booking.id) === String(id));
-        }
-        //POST
-        async addBooking({clientName, clientEmail, date, time, status}) {
-            const bookings = await this.#readBookings();
-            const newBooking = {
-                id: cryto.randomUUID(),
-                clientName,
-                clientEmail,
-                date,
-                time,
-                status,
-                services: []
-            }
-            bookings.push(newBooking);
-            await this.#writeBookings(bookings);
-            return newBooking;
-        }
-        //PUT:ID
-        async updateBooking(id, data) {
-            const bookings = await this.#readBookings();
-            const index = bookings.findIndex(booking => String(booking.id) === String(id));
-            if (index === -1) return null;
-            const booking = {
-                ...bookings[index],
-                ...data
-            };
-            bookings[index] = booking;
-            await this.#writeBookings(bookings);
-            return booking;
-        }
-        //DELETE:ID
-        async deleteBooking(id) {
-            const bookings = await this.#readBookings();
-            const index = bookings.findIndex(booking => String(booking.id) === String(id));
-            if (index === -1) return null;
-            const deletedBooking = bookings.splice(index, 1)[0];
-            await this.#writeBookings(bookings);
-            return deletedBooking;
-        }
+    async #writeBookings(bookings) {
+         await fs.writeFile(this.path, JSON.stringify(bookings, null, 2), 'utf-8');
     }
+    
+    //GET /api/bookings/:bid
+    async getBookingById(id) {
+        const bookings = await this.#readBookings();
+        return bookings.find(booking => String(booking.id) === String(id));
+    }
+    //POST /api/bookings -- crea una reserva con los datos del cliente y la fecha/hora, y un array vacío de servicios
+    async addBooking({clientName, clientEmail, date, time, status}) {
+        const bookings = await this.#readBookings();
+        const newBooking = {
+            id: cryto.randomUUID(),
+            clientName,
+            clientEmail,
+            date,
+            time,
+            status,
+            services: []
+        }
+        bookings.push(newBooking);
+        await this.#writeBookings(bookings);
+        return newBooking;
+    }
+
+    //POST /api/bookings/:bid/services/:sid -- agrega un servicio a una reserva existente, validando que el servicio y la reserva existan
+
+   async addServiceToBooking(bid, sid, serviceManager) {
+        // Lanza error si el servicio no existe
+        const service = await serviceManager.getServiceById(sid);
+        if (!service) {
+            const error = new Error('Servicio no encontrado');
+            error.status = 404;
+            throw error;
+        }
+
+
+        const bookings = await this.#readBookings();
+        const booking = bookings.find(b => String(b.id) === String(bid));
+
+        if (!booking) {
+            const error = new Error('Reserva no encontrada');
+            error.status = 404;
+            throw error;
+        }
+
+        booking.services ??= [];
+
+        // Se usa service.id para guardar el id con el mismo tipo que en services.json
+        const existing = booking.services.find(s => String(s.service) === String(service.id));
+        if (existing) {
+            existing.quantity += 1;
+        } else {
+            booking.services.push({ service: service.id, quantity: 1 });
+        }
+
+        await this.#writeBookings(bookings);
+        return booking;
+    }
+}
 export default BookingManager;

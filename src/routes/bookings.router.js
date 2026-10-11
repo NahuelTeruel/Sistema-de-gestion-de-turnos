@@ -1,17 +1,13 @@
 import { Router } from 'express';
 import BookingManager from '../managers/BookingManager.js';
+import ServiceManager from '../managers/ServiceManager.js';
+
 
 const router = Router();
 const bookingManager = new BookingManager("./src/data/bookings.json");
+const serviceManager = new ServiceManager("./src/data/services.json");
 
 const REQUIRED_FIELDS = ['clientName', 'clientEmail', 'date', 'time', 'status'];
-
-// GET /api/bookings
-router.get('/', async (req, res) => {
-    const bookings = await bookingManager.getBookings();
-
-    res.status(200).json({ status: 'success', payload: bookings });
-});
 
 // GET /api/bookings/:bid
 router.get('/:bid', async (req, res) => {
@@ -32,14 +28,14 @@ router.post('/', async (req, res) => {
 
     const { clientName, clientEmail, date, time, status } = req.body;
 
-     if(!clientName || !clientEmail || !date || !time || !status ){
+     if(!clientName || !clientEmail || !date || !time ){
         return res.status(400).json({
             status: "error",
             message : "Faltan campos obligatorios"
         })
     }
     const newBooking = await bookingManager.addBooking({
-        clientName, clientEmail, date, time, status
+        clientName, clientEmail, date, time, status : status ?? 'pendiente'
     });
 
     res.status(201).json({ 
@@ -48,34 +44,23 @@ router.post('/', async (req, res) => {
         payload: newBooking });
 });
 
-// PUT /api/bookings/:bid
-router.put('/:bid', (req, res) => {
-    const updated = bookingManager.updateBooking(req.params.bid, req.body);
+//POST /api/bookings/:bid/services/:sid
+router.post('/:bid/services/:sid', async (req, res) => {
+    try {
+        const { bid, sid } = req.params;
+        const updatedBooking = await bookingManager.addServiceToBooking(bid, sid, serviceManager);
 
-    if (!updated) {
-        return res.status(404).json({ status: 'error', message: 'Reserva no encontrada' });
+        res.status(200).json({
+            status: 'success',
+            message: 'Servicio agregado a la reserva',
+            payload: updatedBooking
+        });
+    } catch (error) {
+        res.status(error.status || 500).json({
+            status: 'error',
+            message: error.message
+        });
     }
-
-    res.status(200).json({
-        status: 'success',
-        message: 'Reserva actualizada correctamente',
-        payload: updated
-    });
-});
-
-// DELETE /api/bookings/:bid
-router.delete('/:bid', (req, res) => {
-    const deleted = bookingManager.deleteBooking(req.params.bid);
-
-    if (!deleted) {
-        return res.status(404).json({ status: 'error', message: 'Reserva no encontrada' });
-    }
-
-    res.status(200).json({
-        status: 'success',
-        message: 'Reserva eliminada correctamente',
-        payload: deleted
-    });
 });
 
 export default router;
