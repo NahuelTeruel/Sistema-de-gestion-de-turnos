@@ -1,1 +1,12 @@
-[]
+[{
+    "id": 1,
+    "clientName": "Alberto Gonzalez",
+    "clientEmail": "alberto.gonzalez@email.com",
+    "date": "2026-10-15",
+    "time": 30,
+    "service": {
+        "id": 1,
+        "quantity": 2
+    }
+  }
+]
