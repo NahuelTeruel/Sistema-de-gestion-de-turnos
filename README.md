@@ -27,15 +27,25 @@ Repositorio utilizado para el curso de Backend de Coderhouse.
 ## Estructura del proyecto
 
 ```
-src/
-├── config/
-│   └── config.js          # Configuración
-├── data/
-│   └── services.json      # Persistencia de los servicios
-├── managers/
-│   └── ServiceManager.js  # Lógica de gestión de servicios
-├── app.js
-└── server.js
+src/  config/env.config.js
+  controllers/
+    services.controller.js
+    bookings.controller.js
+  managers/
+    ServiceManager.js
+    BookingManager.js
+  routes/
+    services.router.js
+    bookings.router.js
+  data/
+    services.json
+    bookings.json
+  app.js
+  server.js
+package.json
+.env.example
+.gitignore
+README.md
 ```
 
 ## ServiceManager
@@ -49,6 +59,18 @@ Ubicado en `src/managers/ServiceManager.js`, permite gestionar los servicios:
 | `addService(name, description, price, category, available)` | Agrega un nuevo servicio |
 | `updateService(id, data)` | Actualiza los datos de un servicio |
 | `deleteService(id)` | Elimina un servicio |
+
+## BookingManager
+
+Ubicado en `src/managers/BookingManager.js`, permite gestionar las reservas:
+
+| Método | Descripción |
+|--------|-------------|
+| `getBookings()` | Devuelve todos las reservas |
+| `getBookingById(bid)` | Devuelve una reserva por su id |
+| `addBooking(clientName, clientEmail, date, time, status)` | Agrega una nueva reserva |
+| `addServiceToBooking(bid, sid)` | Añade un servicio a una reserva existente |
+
 
 ### Modelo de un servicio
 
@@ -64,6 +86,30 @@ Ubicado en `src/managers/ServiceManager.js`, permite gestionar los servicios:
 ```
 - Campos obligatorios: `name`, `price`, `category`, `available` por defecto es `true`.
 - Si se envía un `id` en el body, se ignora: siempre se genera internamente.
+
+### Modelo de una reserva
+
+```json
+{
+   "id": "2",
+   "clientName": "Sofia Lorenzetti",
+   "clientEmail": "sofi.201@gmail.com",
+   "date": "2026-10-28",
+   "time": "15:40",
+   "status": "pendiente",
+   "services": [
+      {
+         "service": 3,
+         "quantity": 1
+      },
+      {
+         "service": 2,
+         "quantity": 1
+      }
+   ]
+},
+```
+
 ## Ejecución
 
 ```bash
@@ -74,7 +120,9 @@ El servidor queda disponible en `http://localhost:[puerto definido en `.env`]`).
 
 ## Endpoints
 
-Ruta base: `/api/services`
+# Services
+
+Ruta base: `/api/services`, cada ruta deriva la responsabilidad al método correspondiente del controlador services.controller.js
 
 | Método | Ruta | Descripción | Códigos |
 |--------|------|-------------|---------|
@@ -83,6 +131,17 @@ Ruta base: `/api/services`
 | POST | `/api/services` | Crea un servicio. El `id` se genera automáticamente | `201`, `400` |
 | PUT | `/api/services/:sid` | Actualiza un servicio. No permite modificar el `id` | `200`, `404` |
 | DELETE | `/api/services/:sid` | Elimina un servicio | `200`, `404` |
+
+# Bookings
+
+Ruta base: `/api/bookings`, cada ruta deriva la responsabilidad al método correspondiente del controlador bookings.controller.js
+
+| Método | Ruta | Descripción | Códigos |
+|--------|------|-------------|---------|
+| GET | `/api/bookings` | Devuelve todas las reservas. | `200` |
+| GET | `/api/bookings/:sid` | Devuelve una reserva por id | `200`, `404` |
+| POST | `/api/bookings` | Crea una reserva. El `id` se genera automáticamente | `201`, `400` |
+| POST | `/api/bookings/:bid/services/:sid` | Añade un servicio a una reserva existente | `200`, `404` |
 
 ### Filtros (GET /api/services)
 
