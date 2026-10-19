@@ -1,82 +1,21 @@
 import { Router } from 'express';
-import ServiceManager from '../managers/ServiceManager.js';
+import { getServices, getServiceById, addService, updateService, deleteService } from '../controllers/services.controller.js';
 
 const router = Router();
-const serviceManager = new ServiceManager("./src/data/services.json");
-
-const REQUIRED_FIELDS = ['name', 'price', 'duration', 'category'];
 
 // GET /api/services?category=salud&available=true
-router.get('/', async (req, res) => {
-    const { category, available } = req.query;
-    const services = await serviceManager.getServices({ category, available });
-
-    res.status(200).json({ status: 'success', payload: services });
-});
+router.get('/', getServices);
 
 // GET /api/services/:sid
-router.get('/:sid', async (req, res) => {
-    const service = await serviceManager.getServiceById(req.params.sid);
-
-    if (!service) {
-        return res.status(404).json({ status: 'error', message: 'Servicio no encontrado' });
-    }
-
-    res.status(200).json({ status: 'success', payload: service });
-});
+router.get('/:sid', getServiceById);
 
 // POST /api/services
-router.post('/', async (req, res) => {
-    const missing = await REQUIRED_FIELDS.filter(
-        field => req.body[field] === undefined || req.body[field] === ''
-    );
-
-    const { name, description, price, duration, available, category } = req.body;
-
-     if(!name || !duration ||!price || !category ){
-        return res.status(400).json({
-            status: "error",
-            message : "Faltan campos obligatorios"
-        })
-    }
-    const newService = await serviceManager.addService({
-        name, description, price, duration, category, available: available ?? true
-    });
-
-    res.status(201).json({ 
-        status: 'success',
-        message: 'Servicio agregado correctamente',
-        payload: newService });
-});
+router.post('/', addService);
 
 // PUT /api/services/:sid
-router.put('/:sid', (req, res) => {
-    const updated = serviceManager.updateService(req.params.sid, req.body);
-
-    if (!updated) {
-        return res.status(404).json({ status: 'error', message: 'Servicio no encontrado' });
-    }
-
-    res.status(200).json({
-        status: 'success',
-        message: 'Servicio actualizado correctamente',
-        payload: updated
-    });
-});
+router.put('/:sid', updateService);
 
 // DELETE /api/services/:sid
-router.delete('/:sid', (req, res) => {
-    const deleted = serviceManager.deleteService(req.params.sid);
-
-    if (!deleted) {
-        return res.status(404).json({ status: 'error', message: 'Servicio no encontrado' });
-    }
-
-    res.status(200).json({
-        status: 'success',
-        message: 'Servicio eliminado correctamente',
-        payload: deleted
-    });
-});
+router.delete('/:sid', deleteService);
 
 export default router;

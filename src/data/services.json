@@ -45,12 +45,12 @@
     "available": true
   },
   {
-    "id": "9746067b-fc55-497b-a678-04f00d795938",
-    "name": "Consulta test14",
-    "description": "Servicio de consulta con un psicologo",
-    "price": 30000,
-    "duration": 40,
-    "category": "psicología",
+    "id": "ce40f0ed-2c27-4a26-8fbe-527b33b032f1",
+    "name": "Consulta medica de testing",
+    "description": "Servicio de consulta",
+    "price": 42000,
+    "duration": 30,
+    "category": "especialistas",
     "available": true
   }
 ]
