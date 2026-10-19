@@ -35,7 +35,20 @@
       {
         "service": 3,
         "quantity": 1
+      },
+      {
+        "service": 2,
+        "quantity": 1
       }
     ]
+  },
+  {
+    "id": "f21de6a0-cb1e-4067-991e-81186a54acc5",
+    "clientName": "Peralta",
+    "clientEmail": "peralta12@email.com",
+    "date": "2026-11-18",
+    "time": "09:00",
+    "status": "pendiente",
+    "services": []
   }
 ]
