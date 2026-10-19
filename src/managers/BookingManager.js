@@ -14,6 +14,12 @@ class BookingManager {
     async #writeBookings(bookings) {
          await fs.writeFile(this.path, JSON.stringify(bookings, null, 2), 'utf-8');
     }
+
+    //GET /api/bookings -- devuelve todas las reservas
+    async getBookings() {
+        const bookings = await this.#readBookings();
+        return bookings;
+    }
     
     //GET /api/bookings/:bid
     async getBookingById(id) {

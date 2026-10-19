@@ -6,6 +6,14 @@ const serviceManager = new ServiceManager("./src/data/services.json");
 
 const REQUIRED_FIELDS = ['clientName', 'clientEmail', 'date', 'time', 'status'];
 
+
+//GET /api/bookings -- devuelve todas las reservas
+export const getBookings = async (req, res) => {
+    const bookings = await bookingManager.getBookings();
+    res.status(200).json({ status: 'success', payload: bookings });
+};
+
+
 // GET /api/bookings/:bid
 
 export const getBookingById = async (req, res) => {
