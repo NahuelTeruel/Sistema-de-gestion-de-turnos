@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { addBooking, addServiceToBooking, getBookingById, getBookings } from '../controllers/bookings.controller.js';
+import {  createBooking, addServiceToBooking, getBookingById, getBookings } from '../controllers/bookings.controller.js';
 
 
 const router = Router();
@@ -11,7 +11,7 @@ router.get('/', getBookings);
 router.get('/:bid', getBookingById);
 
 // POST /api/bookings
-router.post('/', addBooking);
+router.post('/', createBooking);
 
 //POST /api/bookings/:bid/services/:sid
 router.post('/:bid/services/:sid', addServiceToBooking);

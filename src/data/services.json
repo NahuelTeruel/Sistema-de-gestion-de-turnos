@@ -12,10 +12,10 @@
     "id": 2,
     "name": "Consulta medica",
     "description": "Servicio de consulta con un medico clinico",
-    "price": 40000,
+    "price": 28030,
     "duration": 30,
     "category": "especialistas",
-    "available": true
+    "available": false
   },
   {
     "id": 3,

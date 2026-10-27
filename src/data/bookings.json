@@ -50,5 +50,14 @@
     "time": "09:00",
     "status": "pendiente",
     "services": []
+  },
+  {
+    "id": "805ddd2e-d403-4b86-9220-34e43c601f33",
+    "clientName": "Laureano Diaz",
+    "clientEmail": "ldiaz@gmail.com",
+    "date": "2026-10-30",
+    "time": "18:00",
+    "status": "pendiente",
+    "services": []
   }
 ]
