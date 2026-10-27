@@ -1,23 +1,15 @@
-import BookingManager from '../managers/BookingManager.js';
-import ServiceManager from '../managers/ServiceManager.js';
+import { bookingsService } from '../services/bookings.service.js';
 
-const bookingManager = new BookingManager("./src/data/bookings.json");
-const serviceManager = new ServiceManager("./src/data/services.json");
-
-const REQUIRED_FIELDS = ['clientName', 'clientEmail', 'date', 'time', 'status'];
-
-
-//GET /api/bookings -- devuelve todas las reservas
+// GET /api/bookings -- devuelve todas las reservas
 export const getBookings = async (req, res) => {
-    const bookings = await bookingManager.getBookings();
+    const bookings = await bookingsService.getBookings();
     res.status(200).json({ status: 'success', payload: bookings });
 };
 
 
 // GET /api/bookings/:bid
-
 export const getBookingById = async (req, res) => {
-    const booking = await bookingManager.getBookingById(req.params.bid);
+    const booking = await bookingsService.getBookingById(req.params.bid);
 
     if (!booking) {
         return res.status(404).json({ status: 'error', message: 'Reserva no encontrada' });
@@ -28,33 +20,32 @@ export const getBookingById = async (req, res) => {
 
 
 // POST /api/bookings
-export const addBooking = async (req, res) => {
-    const missing = await REQUIRED_FIELDS.filter(
-        field => req.body[field] === undefined || req.body[field] === ''
-    );
+export const createBooking = async (req, res) => {
+    try {
+        const newBooking = await bookingsService.createBooking(req.body);
 
-    const { clientName, clientEmail, date, time, status } = req.body;
+        return res.status(201).json({
+            status: 'success',
+            message: 'Reserva agregada correctamente',
+            payload: newBooking
+        });
+    } catch (error) {
+        if (error.status) {
+            return res.status(error.status).json({
+                status: 'error',
+                message: error.message
+            });
+        }
 
-     if(!clientName || !clientEmail || !date || !time ){
-        return res.status(400).json({
-            status: "error",
-            message : "Faltan campos obligatorios"
-        })
+        throw error;
     }
-    const newBooking = await bookingManager.addBooking({
-        clientName, clientEmail, date, time, status : status ?? 'pendiente'
-    });
-
-    res.status(201).json({ 
-        status: 'success',
-        message: 'Reserva agregada correctamente',
-        payload: newBooking });
 };
 
+// POST /api/bookings/:bid/services/:sid
 export const addServiceToBooking = async (req, res) => {
     try {
         const { bid, sid } = req.params;
-        const updatedBooking = await bookingManager.addServiceToBooking(bid, sid, serviceManager);
+        const updatedBooking = await bookingsService.addServiceToBooking(bid, sid);
 
         res.status(200).json({
             status: 'success',
