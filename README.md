@@ -40,7 +40,6 @@ src/
     services.repository.js
     bookings.repository.js
   dao/
-    jsonFileDao.js
     services.dao.js
     bookings.dao.js
   routes/
@@ -158,7 +157,7 @@ Ubicado en `src/services/bookings.service.js`, contiene las reglas de negocio de
 |--------|-------------|
 | `getBookings()` | Devuelve todas las reservas |
 | `getBookingById(bid)` | Devuelve una reserva por su id |
-| `addBooking(data)` | Valida los campos obligatorios y agrega una nueva reserva |
+| `createBooking(data)` | Valida los campos obligatorios y agrega una nueva reserva |
 | `addServiceToBooking(bid, sid)` | Valida que existan la reserva y el servicio, y añade el servicio a la reserva |
 
 
