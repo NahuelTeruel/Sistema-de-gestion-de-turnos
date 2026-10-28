@@ -27,9 +27,9 @@ export const getServiceById = async (req, res) => {
     res.status(200).json({ status: 'success', payload: service });
 };
 
-export const addService = async (req, res) => {
+export const createService = async (req, res) => {
     try {
-        const newService = await servicesService.addService(req.body);
+        const newService = await servicesService.createService(req.body);
 
         return res.status(201).json({
             status: 'success',

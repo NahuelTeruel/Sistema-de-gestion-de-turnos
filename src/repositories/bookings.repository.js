@@ -6,35 +6,20 @@ class BookingsRepository {
         this.dao = dao;
     }
 
-    async findAll() {
-        return this.dao.readAll();
+    async getAll() {
+        return this.dao.getAll();
     }
 
-    async findById(id) {
-        const bookings = await this.dao.readAll();
-        return bookings.find(booking => String(booking.id) === String(id));
+    async getById(id) {
+        return this.dao.getById(id);
     }
 
     async create(booking) {
-        const bookings = await this.dao.readAll();
-        bookings.push(booking);
-        await this.dao.writeAll(bookings);
-        return booking;
+        return this.dao.create(booking);
     }
 
-    async updateById(id, changes) {
-        const bookings = await this.dao.readAll();
-        const index = bookings.findIndex(booking => String(booking.id) === String(id));
-
-        if (index === -1) return null;
-
-        const updatedBooking = {
-            ...bookings[index],
-            ...changes
-        };
-        bookings[index] = updatedBooking;
-        await this.dao.writeAll(bookings);
-        return updatedBooking;
+    async update(id, changes) {
+        return this.dao.update(id, changes);
     }
 }
 

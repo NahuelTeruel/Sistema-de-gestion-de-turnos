@@ -86,7 +86,7 @@ Ubicados en `src/controllers`, son la puerta de entrada de cada petición HTTP. 
 
 | Archivo | Handlers | Service asociado |
 |---------|----------|------------------|
-| `services.controller.js` | `getServices`, `getServiceById`, `addService`, `updateService`, `deleteService` | `servicesService` |
+| `services.controller.js` | `getServices`, `getServiceById`, `createService`, `updateService`, `deleteService` | `servicesService` |
 | `bookings.controller.js` | `getBookings`, `getBookingById`, `createBooking`, `addServiceToBooking` | `bookingsService` |
 
 El manejo de errores se apoya en los errores de negocio que lanza el service: si el error trae la propiedad `status`, el controller responde con ese código HTTP (por ejemplo `400` o `404`); si no, responde `500` o relanza el error. Un caso típico es el `404` cuando un recurso no existe.
@@ -97,14 +97,13 @@ Ubicados en `src/repositories`, actúan como intermediarios entre los services y
 
 | Archivo | Métodos |
 |---------|---------|
-| `services.repository.js` | `findAll`, `findById`, `create`, `updateById`, `deleteById` |
-| `bookings.repository.js` | `findAll`, `findById`, `create`, `updateById` |
+| `services.repository.js` | `getAll`, `getById`, `create`, `update`, `delete` |
+| `bookings.repository.js` | `getAll`, `getById`, `create`, `update` |
 
 Detalles de implementación:
 
 - Reciben el DAO por constructor (`constructor(dao = new ServicesDao())`), lo que permite inyectar otro DAO en pruebas sin tocar los datos reales.
-- `findById` compara con `String(id) === String(id)` para tolerar ids numéricos y UUID indistintamente.
-- Los métodos de escritura leen el estado actual, lo modifican y vuelven a escribir el archivo completo.
+- Delegan cada operación en el DAO correspondiente; no manipulan archivos ni conocen el medio de persistencia.
 - No validan datos: eso es responsabilidad de los services.
 
 ### DAO (Data Access Object)
@@ -116,16 +115,21 @@ Ubicados en `src/dao`, son la única capa que conoce el medio de persistencia. H
 | `services.dao.js` | `src/data/services.json` |
 | `bookings.dao.js` | `src/data/bookings.json` |
 
-Interfaz común:
+Interfaz:
 
-| Método | Descripción |
-|--------|-------------|
-| `readAll()` | Lee el archivo, lo parsea y devuelve el array de registros |
-| `writeAll(records)` | Serializa el array con formato legible y sobrescribe el archivo |
+| Método | Descripción | Disponible en |
+|--------|-------------|---------------|
+| `getAll()` | Lee el archivo, lo parsea y devuelve el array de registros | servicios y reservas |
+| `getById(id)` | Busca un registro por id comparando con `String(id)` | servicios y reservas |
+| `create(record)` | Agrega el registro al array y persiste el archivo completo | servicios y reservas |
+| `update(id, changes)` | Mezcla los cambios con el registro existente y persiste; devuelve `null` si no existe | servicios y reservas |
+| `delete(id)` | Quita el registro del array y devuelve el eliminado; `null` si no existe | solo servicios |
+
+`writeAll(records)` queda como helper interno de persistencia: serializa el array completo con formato legible y sobrescribe el archivo.
 
 Las rutas no están hardcodeadas: se reciben por constructor con valor por defecto desde `config.data` (`src/config/config.js`), y se calculan de forma absoluta a partir de la ubicación del archivo fuente. Así la aplicación funciona igual sin importar el directorio desde el que se ejecute, y en pruebas se puede apuntar a un archivo temporal con `new ServicesDao('./tmp/test-services.json')`.
 
-El DAO no aplica filtros, validaciones ni reglas de negocio: solo lee y escribe registros completos.
+El DAO no aplica filtros ni reglas de negocio: solo resuelve el acceso a los registros (listar, buscar, agregar, actualizar y eliminar). Los filtros de búsqueda siguen viviendo en el service.
 
 ### Utils
 
@@ -145,7 +149,7 @@ Ubicado en `src/services/services.service.js`, contiene las reglas de negocio de
 |--------|-------------|
 | `getServices(filters)` | Devuelve los servicios, aplicando filtros de categoría y disponibilidad |
 | `getServiceById(id)` | Devuelve un servicio por su id |
-| `addService(data)` | Valida los campos obligatorios y agrega un nuevo servicio |
+| `createService(data)` | Valida los campos obligatorios y agrega un nuevo servicio |
 | `updateService(id, data)` | Actualiza los datos de un servicio |
 | `deleteService(id)` | Elimina un servicio |
 

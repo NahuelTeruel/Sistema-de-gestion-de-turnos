@@ -6,46 +6,24 @@ class ServicesRepository {
         this.dao = dao;
     }
 
-    async findAll() {
-        return this.dao.readAll();
+    async getAll() {
+        return this.dao.getAll();
     }
 
-    async findById(id) {
-        const services = await this.dao.readAll();
-        return services.find(service => String(service.id) === String(id));
+    async getById(id) {
+        return this.dao.getById(id);
     }
 
     async create(service) {
-        const services = await this.dao.readAll();
-        services.push(service);
-        await this.dao.writeAll(services);
-        return service;
+        return this.dao.create(service);
     }
 
-    async updateById(id, changes) {
-        const services = await this.dao.readAll();
-        const index = services.findIndex(service => String(service.id) === String(id));
-
-        if (index === -1) return null;
-
-        const updatedService = {
-            ...services[index],
-            ...changes
-        };
-        services[index] = updatedService;
-        await this.dao.writeAll(services);
-        return updatedService;
+    async update(id, changes) {
+        return this.dao.update(id, changes);
     }
 
-    async deleteById(id) {
-        const services = await this.dao.readAll();
-        const index = services.findIndex(service => String(service.id) === String(id));
-
-        if (index === -1) return null;
-
-        const deletedService = services.splice(index, 1)[0];
-        await this.dao.writeAll(services);
-        return deletedService;
+    async delete(id) {
+        return this.dao.delete(id);
     }
 }
 

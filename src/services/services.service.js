@@ -10,7 +10,7 @@ class ServicesService {
 
     // filters: { category, available } (vienen de req.query, así que son strings)
     async getServices({ category, available } = {}) {
-        let services = await this.repository.findAll();
+        let services = await this.repository.getAll();
 
         if (category !== undefined) {
             services = services.filter(
@@ -28,10 +28,10 @@ class ServicesService {
     }
 
     async getServiceById(id) {
-        return this.repository.findById(id);
+        return this.repository.getById(id);
     }
 
-    async addService({ name, description, price, duration, category, available }) {
+    async createService({ name, description, price, duration, category, available }) {
         if (!name || !duration || !price || !category) {
             throw createHttpError(400, 'Faltan campos obligatorios');
         }
@@ -50,11 +50,11 @@ class ServicesService {
     }
 
     async updateService(id, data) {
-        return this.repository.updateById(id, data);
+        return this.repository.update(id, data);
     }
 
     async deleteService(id) {
-        return this.repository.deleteById(id);
+        return this.repository.delete(id);
     }
 }
 

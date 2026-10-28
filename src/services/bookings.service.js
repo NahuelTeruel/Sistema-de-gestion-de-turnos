@@ -14,11 +14,11 @@ class BookingsService {
     }
 
     async getBookings() {
-        return this.bookingsRepository.findAll();
+        return this.bookingsRepository.getAll();
     }
 
     async getBookingById(id) {
-        return this.bookingsRepository.findById(id);
+        return this.bookingsRepository.getById(id);
     }
 
     async createBooking({ clientName, clientEmail, date, time, status }) {
@@ -46,7 +46,7 @@ class BookingsService {
             throw createHttpError(404, 'Servicio no encontrado');
         }
 
-        const booking = await this.bookingsRepository.findById(bid);
+        const booking = await this.bookingsRepository.getById(bid);
         if (!booking) {
             throw createHttpError(404, 'Reserva no encontrada');
         }
@@ -64,7 +64,7 @@ class BookingsService {
             booking.services.push({ service: service.id, quantity: 1 });
         }
 
-        return this.bookingsRepository.updateById(bid, { services: booking.services });
+        return this.bookingsRepository.update(bid, { services: booking.services });
     }
 }
 
