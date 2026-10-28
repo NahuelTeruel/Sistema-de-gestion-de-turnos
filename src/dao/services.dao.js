@@ -21,7 +21,7 @@ class ServicesDao {
     async create(service) {
         const services = await this.getAll();
         services.push(service);
-        await this.writeAll(services);
+        await this.#writeAll(services);
         return service;
     }
 
@@ -36,7 +36,7 @@ class ServicesDao {
             ...changes
         };
         services[index] = updatedService;
-        await this.writeAll(services);
+        await this.#writeAll(services);
         return updatedService;
     }
 
@@ -47,12 +47,12 @@ class ServicesDao {
         if (index === -1) return null;
 
         const deletedService = services.splice(index, 1)[0];
-        await this.writeAll(services);
+        await this.#writeAll(services);
         return deletedService;
     }
 
     // Helper interno de persistencia: serializa el array completo en el archivo.
-    async writeAll(records) {
+    async #writeAll(records) {
         await fs.writeFile(this.filePath, JSON.stringify(records, null, 2), 'utf-8');
     }
 }

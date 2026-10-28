@@ -21,7 +21,7 @@ class BookingsDao {
     async create(booking) {
         const bookings = await this.getAll();
         bookings.push(booking);
-        await this.writeAll(bookings);
+        await this.#writeAll(bookings);
         return booking;
     }
 
@@ -36,12 +36,12 @@ class BookingsDao {
             ...changes
         };
         bookings[index] = updatedBooking;
-        await this.writeAll(bookings);
+        await this.#writeAll(bookings);
         return updatedBooking;
     }
 
     // Helper interno de persistencia: serializa el array completo en el archivo.
-    async writeAll(records) {
+    async #writeAll(records) {
         await fs.writeFile(this.filePath, JSON.stringify(records, null, 2), 'utf-8');
     }
 }
