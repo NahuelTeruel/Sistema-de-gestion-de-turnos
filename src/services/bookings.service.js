@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import BookingsRepository from '../repositories/bookings.repository.js';
 import { servicesService as defaultServicesService } from './services.service.js';
 import { createHttpError } from '../utils/errors.js';
@@ -27,7 +26,6 @@ class BookingsService {
         }
 
         const newBooking = {
-            id: crypto.randomUUID(),
             clientName,
             clientEmail,
             date,
@@ -53,15 +51,15 @@ class BookingsService {
 
         booking.services ??= [];
 
-        // Se usa service.id para guardar el id con el mismo tipo que en services.json
+        // Se guarda el _id del servicio (String) dentro del array embebido.
         const existingService = booking.services.find(
-            item => String(item.service) === String(service.id)
+            item => String(item.service) === String(service._id)
         );
 
         if (existingService) {
             existingService.quantity += 1;
         } else {
-            booking.services.push({ service: service.id, quantity: 1 });
+            booking.services.push({ service: service._id, quantity: 1 });
         }
 
         return this.bookingsRepository.update(bid, { services: booking.services });

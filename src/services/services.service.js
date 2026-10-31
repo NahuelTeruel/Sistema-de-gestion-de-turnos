@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import ServicesRepository from '../repositories/services.repository.js';
 import { createHttpError } from '../utils/errors.js';
 
@@ -37,7 +36,6 @@ class ServicesService {
         }
 
         const newService = {
-            id: crypto.randomUUID(),
             name,
             description,
             price,

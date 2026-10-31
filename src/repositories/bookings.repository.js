@@ -14,12 +14,12 @@ class BookingsRepository {
         return this.dao.getById(id);
     }
 
-    async create(booking) {
-        return this.dao.create(booking);
+    async create(data) {
+        return this.dao.create(data);
     }
 
-    async update(id, changes) {
-        return this.dao.update(id, changes);
+    async update(id, data) {
+        return this.dao.update(id, data);
     }
 }
 
