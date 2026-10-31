@@ -1,7 +1,5 @@
 import { bookingModel } from './models/booking.model.js';
 
-// DAO de reservas: única capa que conoce el medio de persistencia (MongoDB).
-// No contiene reglas de negocio ni validaciones del dominio.
 class BookingsDao {
     async getAll() {
         return bookingModel.find();
@@ -11,22 +9,20 @@ class BookingsDao {
         return bookingModel.findById(id);
     }
 
-    async create(data) {
-        return bookingModel.create(data);
+    async create(booking) {
+        return bookingModel.create(booking);
     }
 
-    async update(id, data) {
-        // El _id y los campos internos de Mongo no se pisan desde el body.
-        const changes = { ...data };
-        delete changes._id;
-        delete changes.id;
-        delete changes.__v;
-
+    async update(id, changes) {
         return bookingModel.findByIdAndUpdate(
             id,
             changes,
             { returnDocument: 'after', runValidators: true }
         );
+    }
+
+    async delete(id) {
+        return bookingModel.findByIdAndDelete(id);
     }
 }
 
