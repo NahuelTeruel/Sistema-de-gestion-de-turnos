@@ -31,7 +31,7 @@ class ServicesService {
     }
 
     async createService({ name, description, price, duration, category, available }) {
-        if (!name || !duration || !price || !category) {
+        if (!name || !description || !duration || !price || !category) {
             throw createHttpError(400, 'Faltan campos obligatorios');
         }
 

@@ -34,4 +34,5 @@ const serviceSchema = new mongoose.Schema({
 { timestamps: true }
 );
 
+
 export const serviceModel = mongoose.model('Service', serviceSchema, 'services');
