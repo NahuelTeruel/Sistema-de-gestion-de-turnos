@@ -14,7 +14,6 @@ class ServicesDao {
     }
 
     async update(id, data) {
-        // El _id y los campos internos de Mongo no se pisan desde el body.
         const changes = { ...data };
 
         return serviceModel.findByIdAndUpdate(
