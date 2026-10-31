@@ -4,7 +4,8 @@ import mongoose from 'mongoose';
 // _id: false evita que Mongo agregue un _id propio a cada ítem del array.
 const bookingServiceSchema = new mongoose.Schema({
     service: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Service',
         required: true,
     },
     quantity: {
