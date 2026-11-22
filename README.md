@@ -90,6 +90,8 @@ src/
   public/
     css/
       styles.css
+    js/
+      socket.js
   utils/
     errors.js
   app.js
@@ -337,6 +339,8 @@ Las mismas rutas también están disponibles con el prefijo `/views` (por ejempl
 
 - `services_updated`: envía la lista de servicios al conectarse y en cada cambio de la colección.
 - `bookings_updated`: envía la lista de reservas (con los servicios populados) al conectarse y en cada cambio de la colección.
+
+El cliente está centralizado en `src/public/js/socket.js` y se sirve como `/js/socket.js`. Las vistas solo incluyen los scripts; la conexión, el escapado de HTML y el renderizado de las tarjetas en vivo viven en ese archivo.
 
 ## Endpoints
 
