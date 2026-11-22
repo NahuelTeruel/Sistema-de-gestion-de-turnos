@@ -4,6 +4,7 @@ import { connectDB } from './config/database.config.js';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import { serviceModel } from './dao/models/service.model.js';
+import { bookingModel } from './dao/models/booking.model.js';
 
 const httpServer = createServer(app);
 const io = new Server(httpServer);
@@ -23,8 +24,14 @@ const startServer = async () => {
         // La lista inicial se envía a cada cliente que se conecta.
         const services = await serviceModel.find().lean();
         socket.emit('services_updated', services);
+
+        const bookings = await bookingModel
+          .find()
+          .populate('services.service')
+          .lean();
+        socket.emit('bookings_updated', bookings);
       } catch (error) {
-        console.error('Error al enviar los servicios iniciales:', error.message);
+        console.error('Error al enviar los datos iniciales:', error.message);
       }
     });
 
@@ -35,6 +42,19 @@ const startServer = async () => {
         io.emit('services_updated', services);
       } catch (error) {
         console.error('Error al emitir los servicios actualizados:', error.message);
+      }
+    });
+
+    bookingModel.watch().on('change', async (change) => {
+      console.log('Cambio detectado en la colección de reservas:', change);
+      try {
+        const bookings = await bookingModel
+          .find()
+          .populate('services.service')
+          .lean();
+        io.emit('bookings_updated', bookings);
+      } catch (error) {
+        console.error('Error al emitir las reservas actualizadas:', error.message);
       }
     });
 

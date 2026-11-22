@@ -16,11 +16,16 @@ class BookingsService {
         return this.bookingsRepository.getAll();
     }
 
+    // Reservas con los servicios populados, para mostrarlas en la vista.
+    async getBookingsWithServices() {
+        return this.bookingsRepository.getAllWithServices();
+    }
+
     async getBookingById(id) {
         return this.bookingsRepository.getById(id);
     }
 
-    async createBooking({ clientName, clientEmail, date, time, status }) {
+    async createBooking({ clientName, clientEmail, date, time, status } = {}) {
         if (!clientName || !clientEmail || !date || !time) {
             throw createHttpError(400, 'Faltan campos obligatorios');
         }

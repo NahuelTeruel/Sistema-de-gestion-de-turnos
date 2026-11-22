@@ -18,6 +18,8 @@
     --ok-bg: #e1f2e9;
     --off: #9b3a34;
     --off-bg: #f8e6e3;
+    --warn: #8a5a00;
+    --warn-bg: #fbf0d9;
 
     --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
     --font-body: "Instrument Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -226,6 +228,11 @@ h2 {
     color: var(--off);
 }
 
+.badge--pending {
+    background: var(--warn-bg);
+    color: var(--warn);
+}
+
 /* Precio y duración */
 .service-meta {
     display: flex;
@@ -268,6 +275,146 @@ h2 {
 }
 
 /* ==========================================================================
+   Grilla y tarjetas de reservas
+   ========================================================================== */
+.bookings {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.booking-card {
+    display: flex;
+    flex-direction: column;
+    padding: 22px 22px 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--warn);
+    border-radius: var(--radius-card);
+    transition: border-color 0.15s ease;
+}
+
+.booking-card.is-pending {
+    border-left-color: var(--warn);
+}
+
+.booking-card.is-confirmed {
+    border-left-color: var(--ok);
+}
+
+.booking-card.is-cancelled {
+    border-left-color: var(--off);
+}
+
+.booking-card:hover {
+    border-color: var(--line-strong);
+}
+
+.booking-card.is-pending:hover {
+    border-left-color: var(--warn);
+}
+
+.booking-card.is-confirmed:hover {
+    border-left-color: var(--ok);
+}
+
+.booking-card.is-cancelled:hover {
+    border-left-color: var(--off);
+}
+
+.booking-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.booking-date {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+}
+
+.booking-card h3 {
+    margin: 0 0 8px;
+    font-family: var(--font-display);
+    font-size: 21px;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+}
+
+.booking-email {
+    margin: 0 0 20px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink-faint);
+    word-break: break-word;
+}
+
+.booking-meta {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+}
+
+.booking-meta > div:last-child {
+    text-align: right;
+}
+
+.booking-meta dt {
+    margin-bottom: 2px;
+    font-size: 13px;
+    color: var(--ink-faint);
+}
+
+.booking-meta dd {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+}
+
+.booking-services {
+    display: grid;
+    gap: 8px;
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.booking-services li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: #f7f9f8;
+    font-size: 14px;
+    color: var(--ink-soft);
+}
+
+.booking-qty {
+    font-weight: 600;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+}
+
+.booking-empty {
+    margin: 16px 0 0;
+    font-size: 14px;
+    color: var(--ink-faint);
+}
+
+/* ==========================================================================
    Estados vacíos
    ========================================================================== */
 .empty-state {
@@ -292,6 +439,10 @@ h2 {
 .live-panel:empty::before {
     content: "Esperando actualizaciones de servicios…";
     color: var(--ink-soft);
+}
+
+.live-panel--bookings:empty::before {
+    content: "Esperando actualizaciones de reservas…";
 }
 
 .live-panel .empty-state {
@@ -319,6 +470,10 @@ h2 {
     }
 
     .service-card {
+        transition: none;
+    }
+
+    .booking-card {
         transition: none;
     }
 }

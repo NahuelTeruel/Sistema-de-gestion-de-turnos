@@ -1,6 +1,7 @@
 import express from 'express';
 import servicesRouter from './routes/services.router.js';
 import bookingsRouter from './routes/bookings.router.js';
+import messagesRouter from './routes/messages.router.js';
 import viewRouter from './routes/view.router.js';
 import { configureHandlebars } from './config/handlebars.js';
 import path from 'path';
@@ -17,7 +18,10 @@ app.use(express.json());
 
 app.use('/api/services', servicesRouter);
 app.use('/api/bookings', bookingsRouter);
+app.use('/api/messages', messagesRouter);
 app.use('/', viewRouter);
+// Alias para acceder a las vistas con el prefijo /views (ej. /views/bookings).
+app.use('/views', viewRouter);
 
 app.use(express.static(path.join(__dirname, 'public')));
 

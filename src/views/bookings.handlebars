@@ -1,0 +1,142 @@
+<section class="section">
+  <div class="section-head">
+    <h2>Reservas</h2>
+  </div>
+
+  {{#if bookings}}
+    <div class="bookings">
+      {{#each bookings}}
+        <article class="booking-card {{#if (eq status 'confirmada')}}is-confirmed{{else if (eq status 'cancelada')}}is-cancelled{{else}}is-pending{{/if}}">
+          <div class="booking-card__top">
+            <span class="booking-date">{{date}}</span>
+            {{#if (eq status 'confirmada')}}
+              <span class="badge badge--ok">Confirmada</span>
+            {{else if (eq status 'cancelada')}}
+              <span class="badge badge--off">Cancelada</span>
+            {{else}}
+              <span class="badge badge--pending">{{capitalize status}}</span>
+            {{/if}}
+          </div>
+          <h3>{{clientName}}</h3>
+          <p class="booking-email">{{clientEmail}}</p>
+          <dl class="booking-meta">
+            <div>
+              <dt>Hora</dt>
+              <dd>{{time}}</dd>
+            </div>
+            <div>
+              <dt>Servicios</dt>
+              <dd>{{services.length}}</dd>
+            </div>
+          </dl>
+
+          {{#if services.length}}
+            <ul class="booking-services">
+              {{#each services}}
+                <li>
+                  <span>{{#if service}}{{service.name}}{{else}}Servicio eliminado{{/if}}</span>
+                  <span class="booking-qty">×{{quantity}}</span>
+                </li>
+              {{/each}}
+            </ul>
+          {{else}}
+            <p class="booking-empty">Sin servicios asignados.</p>
+          {{/if}}
+        </article>
+      {{/each}}
+    </div>
+  {{else}}
+    <p class="empty-state">No hay reservas registradas.</p>
+  {{/if}}
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <h2>En vivo (Socket.IO)</h2>
+    <span class="live-dot" aria-hidden="true"></span>
+  </div>
+
+  <div id="bookings-live" class="live-panel live-panel--bookings" aria-live="polite"></div>
+</section>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+
+  // Evita que un nombre o email con HTML se interprete como código
+  const esc = (valor) =>
+    String(valor ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[c]);
+
+  const statusClass = (status) => {
+    const value = String(status ?? "").toLowerCase();
+    if (value === "confirmada") return "is-confirmed";
+    if (value === "cancelada") return "is-cancelled";
+    return "is-pending";
+  };
+
+  const statusBadge = (status) => {
+    const value = String(status ?? "").toLowerCase();
+    if (value === "confirmada") {
+      return '<span class="badge badge--ok">Confirmada</span>';
+    }
+    if (value === "cancelada") {
+      return '<span class="badge badge--off">Cancelada</span>';
+    }
+    return `<span class="badge badge--pending">${esc(
+      String(status ?? "").charAt(0).toUpperCase() + String(status ?? "").slice(1)
+    )}</span>`;
+  };
+
+  const servicesHtml = (services) => {
+    if (!services || services.length === 0) {
+      return '<p class="booking-empty">Sin servicios asignados.</p>';
+    }
+
+    const items = services.map((item) => `
+      <li>
+        <span>${item.service ? esc(item.service.name) : "Servicio eliminado"}</span>
+        <span class="booking-qty">×${esc(item.quantity)}</span>
+      </li>`).join("");
+
+    return `<ul class="booking-services">${items}</ul>`;
+  };
+
+  const cardHtml = (b) => `
+    <article class="booking-card ${statusClass(b.status)}">
+      <div class="booking-card__top">
+        <span class="booking-date">${esc(b.date)}</span>
+        ${statusBadge(b.status)}
+      </div>
+      <h3>${esc(b.clientName)}</h3>
+      <p class="booking-email">${esc(b.clientEmail)}</p>
+      <dl class="booking-meta">
+        <div>
+          <dt>Hora</dt>
+          <dd>${esc(b.time)}</dd>
+        </div>
+        <div>
+          <dt>Servicios</dt>
+          <dd>${esc((b.services || []).length)}</dd>
+        </div>
+      </dl>
+      ${servicesHtml(b.services)}
+    </article>`;
+
+  socket.on("bookings_updated", (bookings) => {
+    const contenedor = document.getElementById("bookings-live");
+
+    if (!bookings || bookings.length === 0) {
+      contenedor.innerHTML = '<p class="empty-state">No hay reservas.</p>';
+      return;
+    }
+
+    contenedor.innerHTML =
+      '<div class="bookings">' + bookings.map(cardHtml).join("") + "</div>";
+  });
+</script>

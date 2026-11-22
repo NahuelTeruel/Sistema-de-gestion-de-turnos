@@ -13,12 +13,13 @@ class ServicesDao {
         return serviceModel.create(data);
     }
 
-    async update(id, data) {
-        const changes = { ...data };
+    async update(id, data = {}) {
+        // _id es inmutable y __v lo administra Mongoose: no deben viajar en el update.
+        const { _id, __v, ...cleanData } = data;
 
         return serviceModel.findByIdAndUpdate(
             id,
-            changes,
+            { $set: cleanData },
             { returnDocument: 'after', runValidators: true }
         );
     }

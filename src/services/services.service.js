@@ -30,7 +30,7 @@ class ServicesService {
         return this.repository.getById(id);
     }
 
-    async createService({ name, description, price, duration, category, available }) {
+    async createService({ name, description, price, duration, category, available } = {}) {
         if (!name || !description || !duration || !price || !category) {
             throw createHttpError(400, 'Faltan campos obligatorios');
         }

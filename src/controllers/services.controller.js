@@ -1,32 +1,43 @@
 import { servicesService } from '../services/services.service.js';
+import { handleControllerError } from '../utils/errors.js';
 
 // GET /api/services?category=salud&available=true
 export const getServices = async (req, res) => {
     try {
         const { category, available } = req.query;
         const services = await servicesService.getServices({ category, available });
+
         return res.status(200).json({
             status: 'success',
             payload: services
-        })
+        });
     } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            status: 'error',
-            payload: 'Error al obtener los servicios' });
+        return handleControllerError(res, error, 'Error al obtener los servicios');
     }
 };
 
+// GET /api/services/:sid
 export const getServiceById = async (req, res) => {
-    const service = await servicesService.getServiceById(req.params.sid);
+    try {
+        const service = await servicesService.getServiceById(req.params.sid);
 
-    if (!service) {
-        return res.status(404).json({ status: 'error', message: 'Servicio no encontrado' });
+        if (!service) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Servicio no encontrado'
+            });
+        }
+
+        return res.status(200).json({
+            status: 'success',
+            payload: service
+        });
+    } catch (error) {
+        return handleControllerError(res, error, 'Error al obtener el servicio');
     }
-
-    res.status(200).json({ status: 'success', payload: service });
 };
 
+// POST /api/services
 export const createService = async (req, res) => {
     try {
         const newService = await servicesService.createService(req.body);
@@ -37,41 +48,50 @@ export const createService = async (req, res) => {
             payload: newService
         });
     } catch (error) {
-        if (error.status) {
-            return res.status(error.status).json({
-                status: 'error',
-                message: error.message
-            });
-        }
-
-        throw error;
+        return handleControllerError(res, error, 'Error al crear el servicio');
     }
 };
 
+// PUT /api/services/:sid
 export const updateService = async (req, res) => {
-    const updated = await servicesService.updateService(req.params.sid, req.body);
+    try {
+        const updated = await servicesService.updateService(req.params.sid, req.body);
 
-    if (!updated) {
-        return res.status(404).json({ status: 'error', message: 'Servicio no encontrado' });
+        if (!updated) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Servicio no encontrado'
+            });
+        }
+
+        return res.status(200).json({
+            status: 'success',
+            message: 'Servicio actualizado correctamente',
+            payload: updated
+        });
+    } catch (error) {
+        return handleControllerError(res, error, 'Error al actualizar el servicio');
     }
+};
 
-    res.status(200).json({
-        status: 'success',
-        message: 'Servicio actualizado correctamente',
-        payload: updated
-    });
-}
-
+// DELETE /api/services/:sid
 export const deleteService = async (req, res) => {
-    const deleted = await servicesService.deleteService(req.params.sid);
+    try {
+        const deleted = await servicesService.deleteService(req.params.sid);
 
-    if (!deleted) {
-        return res.status(404).json({ status: 'error', message: 'Servicio no encontrado' });
+        if (!deleted) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Servicio no encontrado'
+            });
+        }
+
+        return res.status(200).json({
+            status: 'success',
+            message: 'Servicio eliminado correctamente',
+            payload: deleted
+        });
+    } catch (error) {
+        return handleControllerError(res, error, 'Error al eliminar el servicio');
     }
-
-    res.status(200).json({
-        status: 'success',
-        message: 'Servicio eliminado correctamente',
-        payload: deleted
-    });
 };

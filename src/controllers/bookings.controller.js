@@ -1,23 +1,40 @@
 import { bookingsService } from '../services/bookings.service.js';
+import { handleControllerError } from '../utils/errors.js';
 
 // GET /api/bookings -- devuelve todas las reservas
 export const getBookings = async (req, res) => {
-    const bookings = await bookingsService.getBookings();
-    res.status(200).json({ status: 'success', payload: bookings });
-};
+    try {
+        const bookings = await bookingsService.getBookings();
 
+        return res.status(200).json({
+            status: 'success',
+            payload: bookings
+        });
+    } catch (error) {
+        return handleControllerError(res, error, 'Error al obtener las reservas');
+    }
+};
 
 // GET /api/bookings/:bid
 export const getBookingById = async (req, res) => {
-    const booking = await bookingsService.getBookingById(req.params.bid);
+    try {
+        const booking = await bookingsService.getBookingById(req.params.bid);
 
-    if (!booking) {
-        return res.status(404).json({ status: 'error', message: 'Reserva no encontrada' });
+        if (!booking) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Reserva no encontrada'
+            });
+        }
+
+        return res.status(200).json({
+            status: 'success',
+            payload: booking
+        });
+    } catch (error) {
+        return handleControllerError(res, error, 'Error al obtener la reserva');
     }
-
-    res.status(200).json({ status: 'success', payload: booking });
 };
-
 
 // POST /api/bookings
 export const createBooking = async (req, res) => {
@@ -30,14 +47,7 @@ export const createBooking = async (req, res) => {
             payload: newBooking
         });
     } catch (error) {
-        if (error.status) {
-            return res.status(error.status).json({
-                status: 'error',
-                message: error.message
-            });
-        }
-
-        throw error;
+        return handleControllerError(res, error, 'Error al crear la reserva');
     }
 };
 
@@ -47,15 +57,12 @@ export const addServiceToBooking = async (req, res) => {
         const { bid, sid } = req.params;
         const updatedBooking = await bookingsService.addServiceToBooking(bid, sid);
 
-        res.status(200).json({
+        return res.status(200).json({
             status: 'success',
             message: 'Servicio agregado a la reserva',
             payload: updatedBooking
         });
     } catch (error) {
-        res.status(error.status || 500).json({
-            status: 'error',
-            message: error.message
-        });
+        return handleControllerError(res, error, 'Error al agregar el servicio a la reserva');
     }
 };

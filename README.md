@@ -55,24 +55,41 @@ src/
   config/
     config.js
     database.config.js
+    handlebars.js
   controllers/
     services.controller.js
     bookings.controller.js
+    messages.controller.js
+    view.controller.js
   services/
     services.service.js
     bookings.service.js
+    messages.service.js
   repositories/
     services.repository.js
     bookings.repository.js
+    messages.repository.js
   dao/
     models/
       service.model.js
       booking.model.js
+      message.model.js
     services.dao.js
     bookings.dao.js
+    messages.dao.js
   routes/
     services.router.js
     bookings.router.js
+    messages.router.js
+    view.router.js
+  views/
+    layouts/
+      main.handlebars
+    services.handlebars
+    bookings.handlebars
+  public/
+    css/
+      styles.css
   utils/
     errors.js
   app.js
@@ -113,8 +130,10 @@ Ubicados en `src/controllers`, son la puerta de entrada de cada petición HTTP. 
 |---------|----------|------------------|
 | `services.controller.js` | `getServices`, `getServiceById`, `createService`, `updateService`, `deleteService` | `servicesService` |
 | `bookings.controller.js` | `getBookings`, `getBookingById`, `createBooking`, `addServiceToBooking` | `bookingsService` |
+| `messages.controller.js` | `getMessages`, `getMessageById`, `createMessage`, `updateMessage`, `deleteMessage` | `messagesService` |
+| `view.controller.js` | `getServicesView`, `getBookingsView` | `servicesService`, `bookingsService` |
 
-El manejo de errores se apoya en los errores de negocio que lanza el service: si el error trae la propiedad `status`, el controller responde con ese código HTTP (por ejemplo `400` o `404`); si no, responde `500` o relanza el error. Un caso típico es el `404` cuando un recurso no existe.
+El manejo de errores es uniforme: cada handler envuelve su lógica en `try/catch` y delega en `handleControllerError`. Esa utilidad responde con el `status` del error de negocio (`400`, `404`, etc.), traduce los errores de Mongoose (`CastError` y `ValidationError`) a `400` y, ante un error inesperado, registra el detalle y responde `500` sin exponerlo al cliente.
 
 ### Repositories
 
@@ -123,7 +142,8 @@ Ubicados en `src/repositories`, actúan como intermediarios entre los services y
 | Archivo | Métodos |
 |---------|---------|
 | `services.repository.js` | `getAll`, `getById`, `create`, `update`, `delete` |
-| `bookings.repository.js` | `getAll`, `getById`, `create`, `update` |
+| `bookings.repository.js` | `getAll`, `getAllWithServices`, `getById`, `create`, `update` |
+| `messages.repository.js` | `getAll`, `getById`, `create`, `update`, `delete` |
 
 Detalles de implementación:
 
@@ -139,20 +159,22 @@ Ubicados en `src/dao`, son la única capa que conoce el medio de persistencia. H
 |---------|--------|-----------|
 | `services.dao.js` | `serviceModel` | `services` |
 | `bookings.dao.js` | `bookingModel` | `bookings` |
+| `messages.dao.js` | `messageModel` | `messages` |
 
 Interfaz:
 
 | Método | Descripción | Disponible en |
 |--------|-------------|---------------|
-| `getAll()` | Devuelve todos los documentos de la colección (`find`) | servicios y reservas |
-| `getById(id)` | Busca un documento por su `_id` (`findById`) | servicios y reservas |
-| `create(data)` | Inserta un documento nuevo (`create`); MongoDB genera el `_id` | servicios y reservas |
-| `update(id, data)` | Actualiza con `findByIdAndUpdate`, devuelve el documento actualizado y valida el schema (`runValidators`) | servicios y reservas |
-| `delete(id)` | Elimina con `findByIdAndDelete` y devuelve el documento eliminado | solo servicios |
+| `getAll()` | Devuelve todos los documentos de la colección (`find`) | servicios, reservas y mensajes |
+| `getAllWithServices()` | Devuelve las reservas con `services.service` populado (`populate`) | solo reservas |
+| `getById(id)` | Busca un documento por su `_id` (`findById`) | servicios, reservas y mensajes |
+| `create(data)` | Inserta un documento nuevo (`create`); MongoDB genera el `_id` | servicios, reservas y mensajes |
+| `update(id, data)` | Actualiza con `findByIdAndUpdate`, devuelve el documento actualizado y valida el schema (`runValidators`) | servicios, reservas y mensajes |
+| `delete(id)` | Elimina con `findByIdAndDelete` y devuelve el documento eliminado | servicios y mensajes |
 
 Detalles de implementación:
 
-- En `bookings.dao.js`, `update` descarta `_id`, `id` y `__v` del body. En `services.dao.js` el body se pasa tal cual: el `id` se ignora porque no existe en el schema, y el `_id` es inmutable, así que no debe enviarse en un `PUT`.
+- En `services.dao.js`, `bookings.dao.js` y `messages.dao.js`, `update` descarta `_id` y `__v` antes de enviar los cambios, porque `_id` es inmutable y `__v` lo administra Mongoose.
 - Los DAOs no aplican filtros ni reglas de negocio: solo resuelven el acceso a los registros. Los filtros de búsqueda viven en el service.
 - El `_id` es un `ObjectId` generado automáticamente por MongoDB; no se generan ids manualmente en la aplicación.
 
@@ -164,8 +186,9 @@ Ubicados en `src/dao/models`, definen la estructura de cada colección:
 |---------|--------|----------|
 | `service.model.js` | `serviceSchema` | Servicios con validaciones y `timestamps` |
 | `booking.model.js` | `bookingSchema` | Reservas con subdocumentos embebidos de servicios y `timestamps` |
+| `message.model.js` | `messageSchema` | Mensajes con `user`, `message` y `timestamps` |
 
-- Ambos schemas usan `{ timestamps: true }`, así que Mongoose agrega `createdAt` y `updatedAt` automáticamente.
+- Los tres modelos usan `{ timestamps: true }`, así que Mongoose agrega `createdAt` y `updatedAt` automáticamente.
 - En la reserva, `services` es un array de subdocumentos `{ service, quantity }` con `_id: false` para que cada ítem no genere un `_id` propio.
 - `service` es un `ObjectId` con `ref: 'Service'`: guarda la referencia al servicio, no el objeto completo, y permite usar `populate()`.
 
@@ -175,9 +198,11 @@ Ubicados en `src/utils`, agrupan utilidades transversales reutilizables por vari
 
 | Archivo | Contenido |
 |---------|-----------|
-| `errors.js` | `createHttpError(status, message)` |
+| `errors.js` | `createHttpError(status, message)`, `handleControllerError(res, error, fallbackMessage)` |
 
-`createHttpError` crea un `Error` común y le agrega la propiedad `status`. Esto permite que los services informen el código HTTP adecuado (`400` para datos inválidos, `404` para recursos inexistentes) sin importar Express ni acoplarse a la capa HTTP. Luego el controller lee `error.status` y responde en consecuencia.
+`createHttpError` crea un `Error` común y le agrega la propiedad `status`. Esto permite que los services informen el código HTTP adecuado (`400` para datos inválidos, `404` para recursos inexistentes) sin importar Express ni acoplarse a la capa HTTP.
+
+`handleControllerError` centraliza la respuesta de error de los controllers: usa `error.status` si existe, traduce `CastError` y `ValidationError` de Mongoose a `400`, y para cualquier error inesperado registra el detalle en consola y responde `500` con un mensaje genérico.
 
 ### ServicesService
 
@@ -198,11 +223,24 @@ Ubicado en `src/services/bookings.service.js`, contiene las reglas de negocio de
 | Método | Descripción |
 |--------|-------------|
 | `getBookings()` | Devuelve todas las reservas |
+| `getBookingsWithServices()` | Devuelve las reservas con los servicios populados, para la vista |
 | `getBookingById(bid)` | Devuelve una reserva por su id |
 | `createBooking(data)` | Valida los campos obligatorios y crea una nueva reserva |
 | `addServiceToBooking(bid, sid)` | Valida que existan la reserva y el servicio, y añade el servicio a la reserva |
 
 `addServiceToBooking` busca el servicio por id; si ya está en la reserva incrementa su `quantity`, y si no, agrega `{ service: ObjectId, quantity: 1 }`.
+
+### MessagesService
+
+Ubicado en `src/services/messages.service.js`, contiene las reglas de negocio de los mensajes:
+
+| Método | Descripción |
+|--------|-------------|
+| `getMessages()` | Devuelve todos los mensajes en orden cronológico |
+| `getMessageById(mid)` | Devuelve un mensaje por su id |
+| `createMessage(data)` | Valida los campos obligatorios y crea un mensaje |
+| `updateMessage(mid, data)` | Actualiza los datos de un mensaje |
+| `deleteMessage(mid)` | Elimina un mensaje |
 
 ## Modelos de datos
 
@@ -257,6 +295,24 @@ En los ejemplos, los `_id` y las referencias se muestran como texto porque así 
 - `date` y `time` se guardan como texto para conservar el formato `YYYY-MM-DD` y `HH:mm`.
 - `services` es un array de referencias: `service` es un `ObjectId` que apunta al documento de la colección `services`, y `quantity` es un número mayor o igual a `1`.
 
+### Mensaje
+
+```json
+{
+  "_id": "6ae65a1c9addb2965d84dc12",
+  "user": "Sofia Lorenzetti",
+  "message": "Hola, quisiera confirmar mi turno.",
+  "createdAt": "2026-10-31T20:20:00.000Z",
+  "updatedAt": "2026-10-31T20:20:00.000Z",
+  "__v": 0
+}
+```
+
+- Campos obligatorios: `user` y `message`.
+- Ambos campos se guardan como texto y se recortan con `trim`.
+- `createdAt` y `updatedAt` los agrega Mongoose automáticamente.
+- El listado se devuelve en orden cronológico (más antiguos primero).
+
 ## Ejecución
 
 ```bash
@@ -264,6 +320,23 @@ npm start       # inicia el servidor con node --watch
 ```
 
 El servidor se conecta primero a MongoDB y, si la conexión es exitosa, queda disponible en `http://localhost` en el puerto definido en `.env`.
+
+## Vistas (Handlebars)
+
+Las vistas usan `express-handlebars` con el layout `main.handlebars` y comparten los estilos de `src/public/css/styles.css`. Los datos se leen de MongoDB a través de las mismas capas del backend (`view.controller.js` → service → repository → DAO).
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/services` | Lista los servicios con su disponibilidad |
+| GET | `/bookings` | Lista las reservas con sus servicios |
+| GET | `/availability` | Alias de `/bookings` |
+
+Las mismas rutas también están disponibles con el prefijo `/views` (por ejemplo `/views/bookings` o `/views/availability`).
+
+`server.js` también expone actualizaciones en vivo por Socket.IO:
+
+- `services_updated`: envía la lista de servicios al conectarse y en cada cambio de la colección.
+- `bookings_updated`: envía la lista de reservas (con los servicios populados) al conectarse y en cada cambio de la colección.
 
 ## Endpoints
 
@@ -298,9 +371,21 @@ Ruta base: `/api/bookings`, cada ruta deriva la responsabilidad al método corre
 | POST | `/api/bookings` | Crea una reserva. El `_id` lo genera MongoDB | `201`, `400` |
 | POST | `/api/bookings/:bid/services/:sid` | Añade un servicio a una reserva existente | `200`, `404` |
 
+### Messages
+
+Ruta base: `/api/messages`, cada ruta deriva la responsabilidad al método correspondiente del controlador messages.controller.js
+
+| Método | Ruta | Descripción | Códigos |
+|--------|------|-------------|---------|
+| GET | `/api/messages` | Devuelve todos los mensajes en orden cronológico | `200` |
+| GET | `/api/messages/:mid` | Devuelve un mensaje por su `_id` | `200`, `404` |
+| POST | `/api/messages` | Crea un mensaje. El `_id` lo genera MongoDB | `201`, `400` |
+| PUT | `/api/messages/:mid` | Actualiza un mensaje | `200`, `400`, `404` |
+| DELETE | `/api/messages/:mid` | Elimina un mensaje | `200`, `404` |
+
 ## Notas
 
-- La persistencia es MongoDB a través de Mongoose. Las colecciones utilizadas son `services` y `bookings`.
+- La persistencia es MongoDB a través de Mongoose. Las colecciones utilizadas son `services`, `bookings` y `messages`.
 - Los ids son `ObjectId` generados por MongoDB, no UUID.
 - Los servicios se referencian dentro de las reservas por `ObjectId`, no como objeto completo.
 - Los archivos JSON de `src/data` de la versión anterior fueron eliminados: la persistencia es exclusivamente MongoDB.

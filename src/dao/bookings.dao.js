@@ -5,6 +5,14 @@ class BookingsDao {
         return bookingModel.find();
     }
 
+    // Devuelve las reservas con los datos completos de cada servicio referenciado.
+    async getAllWithServices() {
+        return bookingModel
+            .find()
+            .populate('services.service')
+            .lean();
+    }
+
     async getById(id) {
         return bookingModel.findById(id);
     }
@@ -13,10 +21,13 @@ class BookingsDao {
         return bookingModel.create(booking);
     }
 
-    async update(id, changes) {
+    async update(id, data = {}) {
+        // _id es inmutable y __v lo administra Mongoose: no deben viajar en el update.
+        const { _id, __v, ...cleanData } = data;
+
         return bookingModel.findByIdAndUpdate(
             id,
-            changes,
+            { $set: cleanData },
             { returnDocument: 'after', runValidators: true }
         );
     }
