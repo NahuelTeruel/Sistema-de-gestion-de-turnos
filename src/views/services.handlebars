@@ -1,0 +1,96 @@
+<section class="section">
+  <div class="section-head">
+    <h2>Servicios disponibles</h2>
+  </div>
+
+  {{#if services}}
+    <div class="services">
+      {{#each services}}
+        <article class="service-card {{#unless available}}is-unavailable{{/unless}}">
+          <div class="service-card__top">
+            <span class="service-category">{{category}}</span>
+            {{#if available}}
+              <span class="badge badge--ok">Disponible</span>
+            {{else}}
+              <span class="badge badge--off">No disponible</span>
+            {{/if}}
+          </div>
+          <h3>{{name}}</h3>
+          <p class="service-description">{{description}}</p>
+          <dl class="service-meta">
+            <div>
+              <dt>Precio</dt>
+              <dd class="service-price">${{price}}</dd>
+            </div>
+            <div>
+              <dt>Duración</dt>
+              <dd>{{duration}} min</dd>
+            </div>
+          </dl>
+        </article>
+      {{/each}}
+    </div>
+  {{else}}
+    <p class="empty-state">No hay servicios disponibles.</p>
+  {{/if}}
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <h2>En vivo (Socket.IO)</h2>
+    <span class="live-dot" aria-hidden="true"></span>
+  </div>
+
+  <div id="services-live" class="live-panel" aria-live="polite"></div>
+</section>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+
+  // Evita que un nombre o descripción con HTML se interprete como código
+  const esc = (valor) =>
+    String(valor ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[c]);
+
+  const cardHtml = (s) => `
+    <article class="service-card ${s.available ? "" : "is-unavailable"}">
+      <div class="service-card__top">
+        <span class="service-category">${esc(s.category)}</span>
+        ${
+          s.available
+            ? '<span class="badge badge--ok">Disponible</span>'
+            : '<span class="badge badge--off">No disponible</span>'
+        }
+      </div>
+      <h3>${esc(s.name)}</h3>
+      <p class="service-description">${esc(s.description)}</p>
+      <dl class="service-meta">
+        <div>
+          <dt>Precio</dt>
+          <dd class="service-price">$${esc(s.price)}</dd>
+        </div>
+        <div>
+          <dt>Duración</dt>
+          <dd>${esc(s.duration)} min</dd>
+        </div>
+      </dl>
+    </article>`;
+
+  socket.on("services_updated", (services) => {
+    const contenedor = document.getElementById("services-live");
+
+    if (!services || services.length === 0) {
+      contenedor.innerHTML = '<p class="empty-state">No hay servicios.</p>';
+      return;
+    }
+
+    contenedor.innerHTML =
+      '<div class="services">' + services.map(cardHtml).join("") + "</div>";
+  });
+</script>

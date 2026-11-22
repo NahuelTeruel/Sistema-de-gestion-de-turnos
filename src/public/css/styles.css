@@ -1,0 +1,349 @@
+/* ==========================================================================
+   Tokens
+   ========================================================================== */
+:root {
+    --ink: #15201e;
+    --ink-soft: #4b5b57;
+    --ink-faint: #6f7d79;
+    --paper: #f3f5f4;
+    --surface: #ffffff;
+    --line: #dbe3e0;
+    --line-strong: #b9c7c2;
+
+    --brand: #0e5a50;
+    --brand-deep: #0b2f2a;
+    --brand-light: #4fc3ab;
+
+    --ok: #17704c;
+    --ok-bg: #e1f2e9;
+    --off: #9b3a34;
+    --off-bg: #f8e6e3;
+
+    --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --font-body: "Instrument Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+
+    --radius-card: 10px;
+    --radius-panel: 16px;
+    --radius-pill: 999px;
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.5;
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+    outline: 3px solid var(--brand-light);
+    outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Header
+   ========================================================================== */
+.site-header {
+    background: var(--brand-deep);
+    color: #fff;
+}
+
+.site-header__inner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 18px 24px;
+}
+
+.site-header h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+/* Isotipo: una hoja de calendario hecha solo con CSS */
+.brand-mark {
+    position: relative;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background:
+        linear-gradient(var(--brand-light) 0 34%, transparent 34%),
+        #f3f5f4;
+}
+
+.brand-mark::after {
+    content: "";
+    position: absolute;
+    left: 7px;
+    bottom: 6px;
+    width: 14px;
+    height: 7px;
+    border-radius: 2px;
+    background: var(--brand);
+}
+
+/* ==========================================================================
+   Layout
+   ========================================================================== */
+main {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 40px 24px 64px;
+}
+
+.section + .section {
+    margin-top: 56px;
+}
+
+.section-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+}
+
+/* ==========================================================================
+   Grilla y tarjetas de servicios
+   ========================================================================== */
+.services {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.service-card {
+    display: flex;
+    flex-direction: column;
+    padding: 22px 22px 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--ok);
+    border-radius: var(--radius-card);
+    transition: border-color 0.15s ease;
+}
+
+.service-card:hover {
+    border-color: var(--line-strong);
+    border-left-color: var(--ok);
+}
+
+.service-card.is-unavailable {
+    border-left-color: var(--off);
+}
+
+.service-card.is-unavailable:hover {
+    border-left-color: var(--off);
+}
+
+.service-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.service-category {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-soft);
+}
+
+.service-card h3 {
+    margin: 0 0 8px;
+    font-family: var(--font-display);
+    font-size: 21px;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+}
+
+.service-description {
+    flex: 1;
+    margin: 0 0 20px;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+}
+
+.service-card.is-unavailable h3 {
+    color: var(--ink-soft);
+}
+
+/* Estado de disponibilidad */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.badge::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.badge--ok {
+    background: var(--ok-bg);
+    color: var(--ok);
+}
+
+.badge--off {
+    background: var(--off-bg);
+    color: var(--off);
+}
+
+/* Precio y duración */
+.service-meta {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+}
+
+.service-meta > div:last-child {
+    text-align: right;
+}
+
+.service-meta dt {
+    margin-bottom: 2px;
+    font-size: 13px;
+    color: var(--ink-faint);
+}
+
+.service-meta dd {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+}
+
+.service-meta .service-price {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+}
+
+.service-card.is-unavailable .service-price {
+    color: var(--ink-soft);
+}
+
+/* ==========================================================================
+   Estados vacíos
+   ========================================================================== */
+.empty-state {
+    margin: 0;
+    padding: 32px 24px;
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--radius-card);
+    background: var(--surface);
+    color: var(--ink-soft);
+}
+
+/* ==========================================================================
+   Sección en vivo (Socket.IO)
+   ========================================================================== */
+.live-panel {
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    background: #e8efed;
+}
+
+.live-panel:empty::before {
+    content: "Esperando actualizaciones de servicios…";
+    color: var(--ink-soft);
+}
+
+.live-panel .empty-state {
+    background: transparent;
+}
+
+.live-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 0 0 rgba(23, 112, 76, 0.45);
+    animation: live-pulse 2s ease-out infinite;
+}
+
+@keyframes live-pulse {
+    to {
+        box-shadow: 0 0 0 9px rgba(23, 112, 76, 0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .live-dot {
+        animation: none;
+    }
+
+    .service-card {
+        transition: none;
+    }
+}
+
+/* ==========================================================================
+   Mobile
+   ========================================================================== */
+@media (max-width: 600px) {
+    .site-header__inner {
+        padding: 16px;
+    }
+
+    .site-header h1 {
+        font-size: 18px;
+    }
+
+    main {
+        padding: 28px 16px 48px;
+    }
+
+    h2 {
+        font-size: 24px;
+    }
+
+    .live-panel {
+        padding: 16px;
+    }
+}

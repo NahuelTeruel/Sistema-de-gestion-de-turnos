@@ -2,11 +2,11 @@ import { serviceModel } from './models/service.model.js';
 
 class ServicesDao {
     async getAll() {
-        return serviceModel.find();
+        return serviceModel.find().lean();
     }
 
     async getById(id) {
-        return serviceModel.findById(id);
+        return serviceModel.findById(id).lean();
     }
 
     async create(data) {
