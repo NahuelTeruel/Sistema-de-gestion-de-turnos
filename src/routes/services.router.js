@@ -3,7 +3,7 @@ import { getServices, getServiceById, createService, updateService, deleteServic
 
 const router = Router();
 
-// GET /api/services?category=salud&available=true
+// GET /api/services?category=salud&available=true&page=1&limit=10&sortBy=name&order=asc
 router.get('/', getServices);
 
 // GET /api/services/:sid

@@ -36,7 +36,7 @@ class ViewController {
 
     static async getBookingsView(req, res, next) {
         try {
-            const bookings = await bookingsService.getBookingsWithServices();
+            const bookings = await bookingsService.getBookings();
             res.render('bookings', { title: 'Reservas', bookings });
         } catch (error) {
             next(error);

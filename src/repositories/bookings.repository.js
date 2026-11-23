@@ -10,10 +10,6 @@ class BookingsRepository {
         return this.dao.getAll();
     }
 
-    async getAllWithServices() {
-        return this.dao.getAllWithServices();
-    }
-
     async getById(id) {
         return this.dao.getById(id);
     }

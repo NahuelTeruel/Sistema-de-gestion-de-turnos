@@ -1,5 +1,7 @@
 import BookingsRepository from '../repositories/bookings.repository.js';
 import { servicesService as defaultServicesService } from './services.service.js';
+import { addServiceToBookingSchema, createBookingSchema } from '../validations/booking.validation.js';
+import { validate } from '../validations/validate.js';
 import { createHttpError } from '../utils/errors.js';
 
 // Reglas de negocio de reservas.
@@ -16,26 +18,16 @@ class BookingsService {
         return this.bookingsRepository.getAll();
     }
 
-    // Reservas con los servicios populados, para mostrarlas en la vista.
-    async getBookingsWithServices() {
-        return this.bookingsRepository.getAllWithServices();
-    }
-
     async getBookingById(id) {
         return this.bookingsRepository.getById(id);
     }
 
-    async createBooking({ clientName, clientEmail, date, time, status } = {}) {
-        if (!clientName || !clientEmail || !date || !time) {
-            throw createHttpError(400, 'Faltan campos obligatorios');
-        }
+    async createBooking(data = {}) {
+        const validated = validate(createBookingSchema, data);
 
         const newBooking = {
-            clientName,
-            clientEmail,
-            date,
-            time,
-            status: status ?? 'pendiente',
+            ...validated,
+            status: validated.status ?? 'pendiente',
             services: []
         };
 
@@ -44,21 +36,23 @@ class BookingsService {
 
     // Agrega un servicio a una reserva existente, validando que ambos existan.
     async addServiceToBooking(bid, sid) {
-        const service = await this.servicesService.getServiceById(sid);
+        const ids = validate(addServiceToBookingSchema, { bid, sid });
+
+        const service = await this.servicesService.getServiceById(ids.sid);
         if (!service) {
             throw createHttpError(404, 'Servicio no encontrado');
         }
 
-        const booking = await this.bookingsRepository.getById(bid);
+        const booking = await this.bookingsRepository.getById(ids.bid);
         if (!booking) {
             throw createHttpError(404, 'Reserva no encontrada');
         }
 
         booking.services ??= [];
 
-        // Se guarda el _id del servicio (String) dentro del array embebido.
+        // getById devuelve los servicios populados, así que se compara por el _id.
         const existingService = booking.services.find(
-            item => String(item.service) === String(service._id)
+            item => String(item.service?._id ?? item.service) === String(service._id)
         );
 
         if (existingService) {
@@ -67,7 +61,15 @@ class BookingsService {
             booking.services.push({ service: service._id, quantity: 1 });
         }
 
-        return this.bookingsRepository.update(bid, { services: booking.services });
+        // Antes de actualizar se guardan solo las referencias, no los documentos populados.
+        const services = booking.services
+            .map(item => ({
+                service: item.service?._id ?? item.service,
+                quantity: item.quantity
+            }))
+            .filter(item => item.service);
+
+        return this.bookingsRepository.update(ids.bid, { services });
     }
 }
 

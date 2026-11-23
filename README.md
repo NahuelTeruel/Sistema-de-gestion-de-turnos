@@ -65,6 +65,11 @@ src/
     services.service.js
     bookings.service.js
     messages.service.js
+  validations/
+    fields.js
+    validate.js
+    service.validation.js
+    booking.validation.js
   repositories/
     services.repository.js
     bookings.repository.js
@@ -144,7 +149,7 @@ Ubicados en `src/repositories`, actúan como intermediarios entre los services y
 | Archivo | Métodos |
 |---------|---------|
 | `services.repository.js` | `getAll`, `count`, `getById`, `create`, `update`, `delete` |
-| `bookings.repository.js` | `getAll`, `getAllWithServices`, `getById`, `create`, `update` |
+| `bookings.repository.js` | `getAll`, `getById`, `create`, `update` |
 | `messages.repository.js` | `getAll`, `getById`, `create`, `update`, `delete` |
 
 Detalles de implementación:
@@ -167,11 +172,10 @@ Interfaz:
 
 | Método | Descripción | Disponible en |
 |--------|-------------|---------------|
-| `getAll()` | Devuelve todos los documentos de la colección (`find`) | servicios, reservas y mensajes |
+| `getAll()` | Devuelve todos los documentos de la colección (`find`); en reservas aplica `populate` | servicios, reservas y mensajes |
 | `getAll(options)` | Devuelve documentos con `filter`, `sort`, `skip` y `limit` (paginación) | solo servicios |
 | `count(filter)` | Cuenta los documentos que cumplen el filtro (`countDocuments`) | solo servicios |
-| `getAllWithServices()` | Devuelve las reservas con `services.service` populado (`populate`) | solo reservas |
-| `getById(id)` | Busca un documento por su `_id` (`findById`) | servicios, reservas y mensajes |
+| `getById(id)` | Busca un documento por su `_id` (`findById`); en reservas aplica `populate` | servicios, reservas y mensajes |
 | `create(data)` | Inserta un documento nuevo (`create`); MongoDB genera el `_id` | servicios, reservas y mensajes |
 | `update(id, data)` | Actualiza con `findByIdAndUpdate`, devuelve el documento actualizado y valida el schema (`runValidators`) | servicios, reservas y mensajes |
 | `delete(id)` | Elimina con `findByIdAndDelete` y devuelve el documento eliminado | servicios y mensajes |
@@ -208,6 +212,37 @@ Ubicados en `src/utils`, agrupan utilidades transversales reutilizables por vari
 
 `handleControllerError` centraliza la respuesta de error de los controllers: usa `error.status` si existe, traduce `CastError` y `ValidationError` de Mongoose a `400`, y para cualquier error inesperado registra el detalle en consola y responde `500` con un mensaje genérico.
 
+### Validaciones (Zod)
+
+Ubicadas en `src/validations`, definen los esquemas de entrada con Zod y se ejecutan en la capa de services, antes de cualquier consulta a MongoDB. No se usan middlewares de validación: los routers solo derivan al controller y los modelos de Mongoose solo definen la estructura de persistencia, sin importar Zod.
+
+| Archivo | Contenido |
+|---------|-----------|
+| `fields.js` | Builders reutilizables (`text`, `number`, `objectId`) con mensajes en español |
+| `validate.js` | `validate(schema, data)`: ejecuta `safeParse` y lanza un `400` con el detalle de los campos inválidos |
+| `service.validation.js` | `createServiceSchema`, `updateServiceSchema` |
+| `booking.validation.js` | `createBookingSchema`, `addServiceToBookingSchema` |
+
+Esquemas aplicados:
+
+| Operación | Schema | Valida |
+|-----------|--------|--------|
+| POST `/api/services` | `createServiceSchema` | `name`, `description`, `duration`, `price` y `category` obligatorios; `duration` entero positivo; `price` ≥ 0; `available` booleano opcional |
+| PUT `/api/services/:sid` | `updateServiceSchema` | Todos los campos opcionales, pero debe venir al menos uno válido |
+| POST `/api/bookings` | `createBookingSchema` | `clientName`, `clientEmail` (formato email), `date` (`YYYY-MM-DD` real), `time` (`HH:mm`) y `status` opcional (`pendiente`, `confirmada`, `cancelada`) |
+| POST `/api/bookings/:bid/services/:sid` | `addServiceToBookingSchema` | `bid` y `sid` con formato de ObjectId (24 caracteres hexadecimales) |
+
+Si la validación falla, el service lanza un `400` y el controller responde con el formato de error habitual:
+
+```json
+{
+  "status": "error",
+  "message": "Datos inválidos: name: El nombre es obligatorio; price: El precio debe ser un número"
+}
+```
+
+Los datos se validan antes de llamar al repository/DAO, por lo que una petición inválida nunca llega a MongoDB. Zod también descarta los campos desconocidos del body.
+
 ### ServicesService
 
 Ubicado en `src/services/services.service.js`, contiene las reglas de negocio de los servicios:
@@ -216,8 +251,8 @@ Ubicado en `src/services/services.service.js`, contiene las reglas de negocio de
 |--------|-------------|
 | `getServices(query)` | Devuelve los servicios paginados, aplicando filtros de categoría y disponibilidad, orden y paginación |
 | `getServiceById(id)` | Devuelve un servicio por su id |
-| `createService(data)` | Valida los campos obligatorios y crea un nuevo servicio |
-| `updateService(id, data)` | Actualiza los datos de un servicio |
+| `createService(data)` | Valida el body con `createServiceSchema` y crea un nuevo servicio |
+| `updateService(id, data)` | Valida el body con `updateServiceSchema` y actualiza los datos de un servicio |
 | `deleteService(id)` | Elimina un servicio |
 
 ### BookingsService
@@ -226,11 +261,10 @@ Ubicado en `src/services/bookings.service.js`, contiene las reglas de negocio de
 
 | Método | Descripción |
 |--------|-------------|
-| `getBookings()` | Devuelve todas las reservas |
-| `getBookingsWithServices()` | Devuelve las reservas con los servicios populados, para la vista |
-| `getBookingById(bid)` | Devuelve una reserva por su id |
-| `createBooking(data)` | Valida los campos obligatorios y crea una nueva reserva |
-| `addServiceToBooking(bid, sid)` | Valida que existan la reserva y el servicio, y añade el servicio a la reserva |
+| `getBookings()` | Devuelve todas las reservas con los servicios populados (`populate`) |
+| `getBookingById(bid)` | Devuelve una reserva por su id con los servicios populados (`populate`) |
+| `createBooking(data)` | Valida el body con `createBookingSchema` y crea una nueva reserva |
+| `addServiceToBooking(bid, sid)` | Valida los ids con `addServiceToBookingSchema`, verifica que existan la reserva y el servicio, y añade el servicio |
 
 `addServiceToBooking` busca el servicio por id; si ya está en la reserva incrementa su `quantity`, y si no, agrega `{ service: ObjectId, quantity: 1 }`.
 
@@ -299,6 +333,38 @@ En los ejemplos, los `_id` y las referencias se muestran como texto porque así 
 - `date` y `time` se guardan como texto para conservar el formato `YYYY-MM-DD` y `HH:mm`.
 - `services` es un array de referencias: `service` es un `ObjectId` que apunta al documento de la colección `services`, y `quantity` es un número mayor o igual a `1`.
 
+En la base se guarda solo la referencia (`service: ObjectId`). `GET /api/bookings/:bid` aplica `populate('services.service')`, así que la respuesta reemplaza cada `ObjectId` por el documento completo del servicio, junto con los datos de la reserva:
+
+```json
+{
+  "status": "success",
+  "payload": {
+    "_id": "6ae64f989addb2965d84db9a",
+    "clientName": "Sofia Lorenzetti",
+    "clientEmail": "sofi.201@gmail.com",
+    "date": "2026-10-28",
+    "time": "15:40",
+    "status": "pendiente",
+    "services": [
+      {
+        "service": {
+          "_id": "6ae64ad59c19a11fc92542bd",
+          "name": "Corte de pelo",
+          "description": "Corte clásico",
+          "duration": 30,
+          "price": 5000,
+          "category": "Peluquería",
+          "available": true
+        },
+        "quantity": 1
+      }
+    ]
+  }
+}
+```
+
+El listado `GET /api/bookings` y el detalle `GET /api/bookings/:bid` devuelven las reservas con los servicios populados. Al actualizar una reserva, `addServiceToBooking` vuelve a guardar solo las referencias (`service: ObjectId`, `quantity`).
+
 ### Mensaje
 
 ```json
@@ -332,10 +398,9 @@ Las vistas usan `express-handlebars` con el layout `main.handlebars` y comparten
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | GET | `/services` | Lista los servicios paginados con su disponibilidad y controles de anterior/siguiente |
-| GET | `/bookings` | Lista las reservas con sus servicios |
-| GET | `/availability` | Alias de `/bookings` |
+| GET | `/bookings` | Lista las reservas con los servicios populados |
 
-Las mismas rutas también están disponibles con el prefijo `/views` (por ejemplo `/views/bookings` o `/views/availability`).
+Las mismas rutas también están disponibles con el prefijo `/views` (por ejemplo `/views/services` o `/views/bookings`).
 
 La vista `/services` usa la misma paginación que la API: acepta los query params `category`, `available`, `page`, `limit`, `sortBy` y `order`, y muestra controles de **Anterior / Siguiente** que conservan los filtros y el orden seleccionados. Por ejemplo: `/services?category=salud&page=2&limit=5`.
 
@@ -348,7 +413,7 @@ El cliente está centralizado en `src/public/js/socket.js` y se sirve como `/js/
 
 ## Endpoints
 
-Las respuestas siguen el formato `{ status, payload }` y las operaciones de escritura agregan `message`.
+Las respuestas siguen el formato `{ status, payload }` y las operaciones de escritura agregan `message`. El listado paginado de servicios agrega además los metadatos en el primer nivel (`totalDocs`, `totalPages`, `page`, `limit`, `hasPrevPage`, `hasNextPage`, `prevPage`, `nextPage`).
 
 ### Services
 
@@ -359,7 +424,7 @@ Ruta base: `/api/services`, cada ruta deriva la responsabilidad al método corre
 | GET | `/api/services` | Devuelve los servicios paginados. Acepta filtros, orden y paginación por query params | `200`, `400` |
 | GET | `/api/services/:sid` | Devuelve un servicio por su `_id` | `200`, `404` |
 | POST | `/api/services` | Crea un servicio. El `_id` lo genera MongoDB | `201`, `400` |
-| PUT | `/api/services/:sid` | Actualiza un servicio. No permite modificar el `_id` | `200`, `404` |
+| PUT | `/api/services/:sid` | Actualiza un servicio. No permite modificar el `_id` | `200`, `400`, `404` |
 | DELETE | `/api/services/:sid` | Elimina un servicio | `200`, `404` |
 
 ### Filtros, orden y paginación (GET /api/services)
@@ -369,11 +434,17 @@ Ruta base: `/api/services`, cada ruta deriva la responsabilidad al método corre
 | `category` | texto | — | Filtra por categoría (exacta, sin distinguir mayúsculas/minúsculas). Ej: `category=salud` |
 | `available` | `true` / `false` | — | Filtra por disponibilidad. Ej: `available=true` |
 | `page` | entero ≥ 1 | `1` | Página a devolver |
-| `limit` | entero entre 1 y 100 | `10` | Cantidad de resultados por página |
+| `limit` | entero entre 1 y 100 | `9` | Cantidad de resultados por página |
 | `sortBy` | texto | `createdAt` | Campo de orden: `name`, `price`, `duration`, `category`, `available`, `createdAt` o `updatedAt` |
 | `order` | `asc` / `desc` | `asc` | Sentido del orden |
 
-Se pueden combinar todos los parámetros: `/api/services?category=salud&available=true&page=2&limit=5&sortBy=price&order=desc`
+Se pueden combinar todos los parámetros. Ejemplos:
+
+- Filtro por categoría: `GET /api/services?category=salud`
+- Filtro por disponibilidad: `GET /api/services?available=true`
+- Paginación: `GET /api/services?page=2&limit=5`
+- Ordenamiento: `GET /api/services?sortBy=price&order=desc`
+- Combinado: `GET /api/services?category=salud&available=true&page=2&limit=5&sortBy=price&order=desc`
 
 Los valores inválidos (por ejemplo `page=0`, `limit=abc`, `sortBy=password` u `order=up`) responden `400`.
 
@@ -396,7 +467,7 @@ La respuesta incluye el listado en `payload` y los metadatos de paginación en e
   "totalDocs": 25,
   "totalPages": 3,
   "page": 2,
-  "limit": 10,
+  "limit": 9,
   "hasPrevPage": true,
   "hasNextPage": true,
   "prevPage": 1,
@@ -417,10 +488,48 @@ Ruta base: `/api/bookings`, cada ruta deriva la responsabilidad al método corre
 
 | Método | Ruta | Descripción | Códigos |
 |--------|------|-------------|---------|
-| GET | `/api/bookings` | Devuelve todas las reservas | `200` |
-| GET | `/api/bookings/:bid` | Devuelve una reserva por su `_id` | `200`, `404` |
+| GET | `/api/bookings` | Devuelve todas las reservas con los datos completos de cada servicio asociado (`populate`) | `200` |
+| GET | `/api/bookings/:bid` | Devuelve una reserva por su `_id` con los datos completos de cada servicio asociado (`populate`) | `200`, `404` |
 | POST | `/api/bookings` | Crea una reserva. El `_id` lo genera MongoDB | `201`, `400` |
-| POST | `/api/bookings/:bid/services/:sid` | Añade un servicio a una reserva existente | `200`, `404` |
+| POST | `/api/bookings/:bid/services/:sid` | Añade un servicio a una reserva existente | `200`, `400`, `404` |
+
+### Consultar una reserva con servicios completos
+
+`GET /api/bookings/:bid` aplica `populate('services.service')`: en la respuesta, cada `services[].service` es el documento completo del servicio (nombre, descripción, precio, duración, categoría y disponibilidad) en lugar de su `ObjectId`.
+
+```http
+GET /api/bookings/6ae64f989addb2965d84db9a
+```
+
+```json
+{
+  "status": "success",
+  "payload": {
+    "_id": "6ae64f989addb2965d84db9a",
+    "clientName": "Sofia Lorenzetti",
+    "clientEmail": "sofi.201@gmail.com",
+    "date": "2026-10-28",
+    "time": "15:40",
+    "status": "pendiente",
+    "services": [
+      {
+        "service": {
+          "_id": "6ae64ad59c19a11fc92542bd",
+          "name": "Corte de pelo",
+          "description": "Corte clásico",
+          "duration": 30,
+          "price": 5000,
+          "category": "Peluquería",
+          "available": true
+        },
+        "quantity": 1
+      }
+    ]
+  }
+}
+```
+
+Si la reserva no existe responde `404`; si el `bid` no tiene formato de ObjectId, `handleControllerError` responde `400`.
 
 ### Messages
 

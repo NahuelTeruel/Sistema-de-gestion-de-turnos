@@ -1,19 +1,21 @@
 import ServicesRepository from '../repositories/services.repository.js';
+import { createServiceSchema, updateServiceSchema } from '../validations/service.validation.js';
+import { validate } from '../validations/validate.js';
 import { createHttpError } from '../utils/errors.js';
 
 const DEFAULT_PAGE = 1;
-const DEFAULT_LIMIT = 10;
+const DEFAULT_LIMIT = 9;
 const MAX_LIMIT = 100;
 const DEFAULT_SORT_BY = 'createdAt';
 const DEFAULT_ORDER = 'asc';
 
-// Campos por los que se permite ordenar: evita ordenar por claves internas o inexistentes.
+
 const SORTABLE_FIELDS = ['name', 'price', 'duration', 'category', 'available', 'createdAt', 'updatedAt'];
 
-// Escapa caracteres especiales para usar el texto dentro de una RegExp.
+
 const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-// Valida un query param numérico entero positivo. Si no viene, usa el valor por defecto.
+
 const parsePositiveInt = (value, name, fallback) => {
     if (value === undefined || value === null || String(value).trim() === '') {
         return fallback;
@@ -34,13 +36,13 @@ class ServicesService {
         this.repository = repository;
     }
 
-    // query: { category, available, page, limit, sortBy, order } (viene de req.query, así que son strings)
+    
     async getServices(query = {}) {
         const { category, available, page, limit, sortBy, order } = query;
         const filter = {};
 
         if (category !== undefined && String(category).trim() !== '') {
-            // Búsqueda exacta por categoría, sin distinguir mayúsculas/minúsculas.
+            
             filter.category = new RegExp(`^${escapeRegExp(String(category).trim())}$`, 'i');
         }
 
@@ -104,25 +106,21 @@ class ServicesService {
         return this.repository.getById(id);
     }
 
-    async createService({ name, description, price, duration, category, available } = {}) {
-        if (!name || !description || !duration || !price || !category) {
-            throw createHttpError(400, 'Faltan campos obligatorios');
-        }
+    async createService(data = {}) {
+        const validated = validate(createServiceSchema, data);
 
         const newService = {
-            name,
-            description,
-            price,
-            duration,
-            category,
-            available: available ?? true
+            ...validated,
+            available: validated.available ?? true
         };
 
         return this.repository.create(newService);
     }
 
-    async updateService(id, data) {
-        return this.repository.update(id, data);
+    async updateService(id, data = {}) {
+        const validated = validate(updateServiceSchema, data);
+
+        return this.repository.update(id, validated);
     }
 
     async deleteService(id) {

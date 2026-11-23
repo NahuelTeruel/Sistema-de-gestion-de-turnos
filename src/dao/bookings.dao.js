@@ -1,20 +1,20 @@
 import { bookingModel } from './models/booking.model.js';
 
 class BookingsDao {
-    async getAll() {
-        return bookingModel.find();
-    }
-
     // Devuelve las reservas con los datos completos de cada servicio referenciado.
-    async getAllWithServices() {
+    async getAll() {
         return bookingModel
             .find()
             .populate('services.service')
             .lean();
     }
 
+    // Devuelve una reserva con los datos completos de cada servicio referenciado.
     async getById(id) {
-        return bookingModel.findById(id);
+        return bookingModel
+            .findById(id)
+            .populate('services.service')
+            .lean();
     }
 
     async create(booking) {
