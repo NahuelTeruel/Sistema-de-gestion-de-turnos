@@ -33,6 +33,27 @@
   {{else}}
     <p class="empty-state">No hay servicios disponibles.</p>
   {{/if}}
+
+  {{#if pagination.totalPages}}
+    <nav class="pagination" aria-label="Paginación de servicios">
+      {{#if pagination.hasPrevPage}}
+        <a class="pagination__link" href="{{pagination.prevLink}}" rel="prev">← Anterior</a>
+      {{else}}
+        <span class="pagination__link is-disabled" aria-disabled="true">← Anterior</span>
+      {{/if}}
+
+      <span class="pagination__info">
+        Página <strong>{{pagination.page}}</strong> de <strong>{{pagination.totalPages}}</strong>
+        · {{pagination.totalDocs}} servicios
+      </span>
+
+      {{#if pagination.hasNextPage}}
+        <a class="pagination__link" href="{{pagination.nextLink}}" rel="next">Siguiente →</a>
+      {{else}}
+        <span class="pagination__link is-disabled" aria-disabled="true">Siguiente →</span>
+      {{/if}}
+    </nav>
+  {{/if}}
 </section>
 
 <section class="section">

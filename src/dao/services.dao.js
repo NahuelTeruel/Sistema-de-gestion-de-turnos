@@ -1,8 +1,19 @@
 import { serviceModel } from './models/service.model.js';
 
 class ServicesDao {
-    async getAll() {
-        return serviceModel.find().lean();
+    // options: { filter, sort, skip, limit }. Sin limit devuelve todos los documentos.
+    async getAll({ filter = {}, sort = {}, skip = 0, limit } = {}) {
+        const query = serviceModel.find(filter).sort(sort).skip(skip);
+
+        if (limit !== undefined) {
+            query.limit(limit);
+        }
+
+        return query.lean();
+    }
+
+    async count(filter = {}) {
+        return serviceModel.countDocuments(filter);
     }
 
     async getById(id) {

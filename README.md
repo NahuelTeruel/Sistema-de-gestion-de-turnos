@@ -143,7 +143,7 @@ Ubicados en `src/repositories`, actúan como intermediarios entre los services y
 
 | Archivo | Métodos |
 |---------|---------|
-| `services.repository.js` | `getAll`, `getById`, `create`, `update`, `delete` |
+| `services.repository.js` | `getAll`, `count`, `getById`, `create`, `update`, `delete` |
 | `bookings.repository.js` | `getAll`, `getAllWithServices`, `getById`, `create`, `update` |
 | `messages.repository.js` | `getAll`, `getById`, `create`, `update`, `delete` |
 
@@ -168,6 +168,8 @@ Interfaz:
 | Método | Descripción | Disponible en |
 |--------|-------------|---------------|
 | `getAll()` | Devuelve todos los documentos de la colección (`find`) | servicios, reservas y mensajes |
+| `getAll(options)` | Devuelve documentos con `filter`, `sort`, `skip` y `limit` (paginación) | solo servicios |
+| `count(filter)` | Cuenta los documentos que cumplen el filtro (`countDocuments`) | solo servicios |
 | `getAllWithServices()` | Devuelve las reservas con `services.service` populado (`populate`) | solo reservas |
 | `getById(id)` | Busca un documento por su `_id` (`findById`) | servicios, reservas y mensajes |
 | `create(data)` | Inserta un documento nuevo (`create`); MongoDB genera el `_id` | servicios, reservas y mensajes |
@@ -177,7 +179,7 @@ Interfaz:
 Detalles de implementación:
 
 - En `services.dao.js`, `bookings.dao.js` y `messages.dao.js`, `update` descarta `_id` y `__v` antes de enviar los cambios, porque `_id` es inmutable y `__v` lo administra Mongoose.
-- Los DAOs no aplican filtros ni reglas de negocio: solo resuelven el acceso a los registros. Los filtros de búsqueda viven en el service.
+- Los DAOs no aplican reglas de negocio: reciben los filtros y las opciones de paginación ya construidos por el service y solo resuelven la consulta a MongoDB.
 - El `_id` es un `ObjectId` generado automáticamente por MongoDB; no se generan ids manualmente en la aplicación.
 
 ### Modelos de Mongoose
@@ -212,7 +214,7 @@ Ubicado en `src/services/services.service.js`, contiene las reglas de negocio de
 
 | Método | Descripción |
 |--------|-------------|
-| `getServices(filters)` | Devuelve los servicios, aplicando filtros de categoría y disponibilidad |
+| `getServices(query)` | Devuelve los servicios paginados, aplicando filtros de categoría y disponibilidad, orden y paginación |
 | `getServiceById(id)` | Devuelve un servicio por su id |
 | `createService(data)` | Valida los campos obligatorios y crea un nuevo servicio |
 | `updateService(id, data)` | Actualiza los datos de un servicio |
@@ -329,11 +331,13 @@ Las vistas usan `express-handlebars` con el layout `main.handlebars` y comparten
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/services` | Lista los servicios con su disponibilidad |
+| GET | `/services` | Lista los servicios paginados con su disponibilidad y controles de anterior/siguiente |
 | GET | `/bookings` | Lista las reservas con sus servicios |
 | GET | `/availability` | Alias de `/bookings` |
 
 Las mismas rutas también están disponibles con el prefijo `/views` (por ejemplo `/views/bookings` o `/views/availability`).
+
+La vista `/services` usa la misma paginación que la API: acepta los query params `category`, `available`, `page`, `limit`, `sortBy` y `order`, y muestra controles de **Anterior / Siguiente** que conservan los filtros y el orden seleccionados. Por ejemplo: `/services?category=salud&page=2&limit=5`.
 
 `server.js` también expone actualizaciones en vivo por Socket.IO:
 
@@ -352,17 +356,60 @@ Ruta base: `/api/services`, cada ruta deriva la responsabilidad al método corre
 
 | Método | Ruta | Descripción | Códigos |
 |--------|------|-------------|---------|
-| GET | `/api/services` | Devuelve todos los servicios. Acepta filtros por query params | `200` |
+| GET | `/api/services` | Devuelve los servicios paginados. Acepta filtros, orden y paginación por query params | `200`, `400` |
 | GET | `/api/services/:sid` | Devuelve un servicio por su `_id` | `200`, `404` |
 | POST | `/api/services` | Crea un servicio. El `_id` lo genera MongoDB | `201`, `400` |
 | PUT | `/api/services/:sid` | Actualiza un servicio. No permite modificar el `_id` | `200`, `404` |
 | DELETE | `/api/services/:sid` | Elimina un servicio | `200`, `404` |
 
-### Filtros (GET /api/services)
+### Filtros, orden y paginación (GET /api/services)
 
-- `category`: filtra por categoría. Ej: `/api/services?category=salud`
-- `available`: filtra por disponibilidad. Ej: `/api/services?available=true`
-- Se pueden combinar: `/api/services?category=salud&available=true`
+| Query param | Tipo | Por defecto | Descripción |
+|-------------|------|-------------|-------------|
+| `category` | texto | — | Filtra por categoría (exacta, sin distinguir mayúsculas/minúsculas). Ej: `category=salud` |
+| `available` | `true` / `false` | — | Filtra por disponibilidad. Ej: `available=true` |
+| `page` | entero ≥ 1 | `1` | Página a devolver |
+| `limit` | entero entre 1 y 100 | `10` | Cantidad de resultados por página |
+| `sortBy` | texto | `createdAt` | Campo de orden: `name`, `price`, `duration`, `category`, `available`, `createdAt` o `updatedAt` |
+| `order` | `asc` / `desc` | `asc` | Sentido del orden |
+
+Se pueden combinar todos los parámetros: `/api/services?category=salud&available=true&page=2&limit=5&sortBy=price&order=desc`
+
+Los valores inválidos (por ejemplo `page=0`, `limit=abc`, `sortBy=password` u `order=up`) responden `400`.
+
+La respuesta incluye el listado en `payload` y los metadatos de paginación en el primer nivel:
+
+```json
+{
+  "status": "success",
+  "payload": [
+    {
+      "_id": "6ae6497e4d32bffcdc09d146",
+      "name": "Corte de pelo",
+      "description": "Corte clásico",
+      "duration": 30,
+      "price": 5000,
+      "category": "Peluquería",
+      "available": true
+    }
+  ],
+  "totalDocs": 25,
+  "totalPages": 3,
+  "page": 2,
+  "limit": 10,
+  "hasPrevPage": true,
+  "hasNextPage": true,
+  "prevPage": 1,
+  "nextPage": 3
+}
+```
+
+- `totalDocs`: cantidad total de resultados que cumplen los filtros.
+- `totalPages`: total de páginas (`0` si no hay resultados).
+- `page`: página actual.
+- `limit`: cantidad de resultados por página.
+- `hasPrevPage` / `hasNextPage`: indican si existe página anterior o siguiente.
+- `prevPage` / `nextPage`: número de la página anterior o siguiente, o `null` si no existe.
 
 ### Bookings
 

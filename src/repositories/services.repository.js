@@ -6,8 +6,12 @@ class ServicesRepository {
         this.dao = dao;
     }
 
-    async getAll() {
-        return this.dao.getAll();
+    async getAll(options = {}) {
+        return this.dao.getAll(options);
+    }
+
+    async count(filter = {}) {
+        return this.dao.count(filter);
     }
 
     async getById(id) {

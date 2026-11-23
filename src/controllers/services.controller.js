@@ -1,15 +1,22 @@
 import { servicesService } from '../services/services.service.js';
 import { handleControllerError } from '../utils/errors.js';
 
-// GET /api/services?category=salud&available=true
+// GET /api/services?category=salud&available=true&page=1&limit=10&sortBy=name&order=asc
 export const getServices = async (req, res) => {
     try {
-        const { category, available } = req.query;
-        const services = await servicesService.getServices({ category, available });
+        const result = await servicesService.getServices(req.query);
 
         return res.status(200).json({
             status: 'success',
-            payload: services
+            payload: result.docs,
+            totalDocs: result.totalDocs,
+            totalPages: result.totalPages,
+            page: result.page,
+            limit: result.limit,
+            hasPrevPage: result.hasPrevPage,
+            hasNextPage: result.hasNextPage,
+            prevPage: result.prevPage,
+            nextPage: result.nextPage
         });
     } catch (error) {
         return handleControllerError(res, error, 'Error al obtener los servicios');
