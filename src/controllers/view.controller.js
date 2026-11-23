@@ -12,7 +12,7 @@ const buildPageLink = (req, page) => {
 
     params.set('page', page);
 
-    return `${req.baseUrl}/services?${params.toString()}`;
+    return `${req.baseUrl}${req.path}?${params.toString()}`;
 };
 
 class ViewController {
@@ -36,8 +36,17 @@ class ViewController {
 
     static async getBookingsView(req, res, next) {
         try {
-            const bookings = await bookingsService.getBookings();
-            res.render('bookings', { title: 'Reservas', bookings });
+            const { docs, ...pagination } = await bookingsService.getBookings(req.query);
+
+            res.render('bookings', {
+                title: 'Reservas',
+                bookings: docs,
+                pagination: {
+                    ...pagination,
+                    prevLink: pagination.hasPrevPage ? buildPageLink(req, pagination.prevPage) : null,
+                    nextLink: pagination.hasNextPage ? buildPageLink(req, pagination.nextPage) : null
+                }
+            });
         } catch (error) {
             next(error);
         }

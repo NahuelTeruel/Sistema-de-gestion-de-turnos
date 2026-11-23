@@ -2,11 +2,23 @@ import { bookingModel } from './models/booking.model.js';
 
 class BookingsDao {
     // Devuelve las reservas con los datos completos de cada servicio referenciado.
-    async getAll() {
-        return bookingModel
-            .find()
-            .populate('services.service')
-            .lean();
+    // options: { filter, sort, skip, limit }. Sin limit devuelve todas.
+    async getAll({ filter = {}, sort = {}, skip = 0, limit } = {}) {
+        const query = bookingModel
+            .find(filter)
+            .sort(sort)
+            .skip(skip)
+            .populate('services.service');
+
+        if (limit !== undefined) {
+            query.limit(limit);
+        }
+
+        return query.lean();
+    }
+
+    async count(filter = {}) {
+        return bookingModel.countDocuments(filter);
     }
 
     // Devuelve una reserva con los datos completos de cada servicio referenciado.

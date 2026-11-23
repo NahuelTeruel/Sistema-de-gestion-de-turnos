@@ -174,8 +174,8 @@ Interfaz:
 | Método | Descripción | Disponible en |
 |--------|-------------|---------------|
 | `getAll()` | Devuelve todos los documentos de la colección (`find`); en reservas aplica `populate` | servicios, reservas y mensajes |
-| `getAll(options)` | Devuelve documentos con `filter`, `sort`, `skip` y `limit` (paginación) | solo servicios |
-| `count(filter)` | Cuenta los documentos que cumplen el filtro (`countDocuments`) | solo servicios |
+| `getAll(options)` | Devuelve documentos con `filter`, `sort`, `skip` y `limit` (paginación); en reservas aplica `populate` | servicios y reservas |
+| `count(filter)` | Cuenta los documentos que cumplen el filtro (`countDocuments`) | servicios y reservas |
 | `getById(id)` | Busca un documento por su `_id` (`findById`); en reservas aplica `populate` | servicios, reservas y mensajes |
 | `create(data)` | Inserta un documento nuevo (`create`); MongoDB genera el `_id` | servicios, reservas y mensajes |
 | `update(id, data)` | Actualiza con `findByIdAndUpdate`, devuelve el documento actualizado y valida el schema (`runValidators`) | servicios, reservas y mensajes |
@@ -265,7 +265,7 @@ Ubicado en `src/services/bookings.service.js`, contiene las reglas de negocio de
 
 | Método | Descripción |
 |--------|-------------|
-| `getBookings()` | Devuelve todas las reservas con los servicios populados (`populate`) |
+| `getBookings(query)` | Devuelve las reservas paginadas, aplicando filtro por estado, orden y paginación; incluye los servicios populados (`populate`) |
 | `getBookingById(bid)` | Devuelve una reserva por su id con los servicios populados (`populate`) |
 | `createBooking(data)` | Valida el body con `createBookingSchema` y crea una nueva reserva |
 | `addServiceToBooking(bid, sid)` | Valida los ids con `addServiceToBookingSchema`, verifica que existan la reserva y el servicio, y añade el servicio |
@@ -402,11 +402,13 @@ Las vistas usan `express-handlebars` con el layout `main.handlebars` y comparten
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | GET | `/services` | Lista los servicios paginados con su disponibilidad y controles de anterior/siguiente |
-| GET | `/bookings` | Lista las reservas con los servicios populados |
+| GET | `/bookings` | Lista las reservas paginadas con sus servicios populados y controles de anterior/siguiente |
 
 Las mismas rutas también están disponibles con el prefijo `/views` (por ejemplo `/views/services` o `/views/bookings`).
 
 La vista `/services` usa la misma paginación que la API: acepta los query params `category`, `available`, `page`, `limit`, `sortBy` y `order`, y muestra controles de **Anterior / Siguiente** que conservan los filtros y el orden seleccionados. Por ejemplo: `/services?category=salud&page=2&limit=5`.
+
+La vista `/bookings` también usa la paginación de la API: acepta `status`, `page`, `limit`, `sortBy` y `order`, y muestra los mismos controles de **Anterior / Siguiente**. Por ejemplo: `/bookings?status=pendiente&page=2&limit=9`.
 
 `server.js` también expone actualizaciones en vivo por Socket.IO:
 
@@ -417,7 +419,7 @@ El cliente está centralizado en `src/public/js/socket.js` y se sirve como `/js/
 
 ## Endpoints
 
-Las respuestas siguen el formato `{ status, payload }` y las operaciones de escritura agregan `message`. El listado paginado de servicios agrega además los metadatos en el primer nivel (`totalDocs`, `totalPages`, `page`, `limit`, `hasPrevPage`, `hasNextPage`, `prevPage`, `nextPage`).
+Las respuestas siguen el formato `{ status, payload }` y las operaciones de escritura agregan `message`. Los listados paginados de servicios y reservas agregan además los metadatos en el primer nivel (`totalDocs`, `totalPages`, `page`, `limit`, `hasPrevPage`, `hasNextPage`, `prevPage`, `nextPage`).
 
 ### Services
 
@@ -492,10 +494,69 @@ Ruta base: `/api/bookings`, cada ruta deriva la responsabilidad al método corre
 
 | Método | Ruta | Descripción | Códigos |
 |--------|------|-------------|---------|
-| GET | `/api/bookings` | Devuelve todas las reservas con los datos completos de cada servicio asociado (`populate`) | `200` |
+| GET | `/api/bookings` | Devuelve las reservas paginadas con los datos completos de cada servicio asociado (`populate`). Acepta filtro por estado, orden y paginación por query params | `200`, `400` |
 | GET | `/api/bookings/:bid` | Devuelve una reserva por su `_id` con los datos completos de cada servicio asociado (`populate`) | `200`, `404` |
 | POST | `/api/bookings` | Crea una reserva. El `_id` lo genera MongoDB | `201`, `400` |
 | POST | `/api/bookings/:bid/services/:sid` | Añade un servicio a una reserva existente | `200`, `400`, `404` |
+
+### Filtros, orden y paginación (GET /api/bookings)
+
+| Query param | Tipo | Por defecto | Descripción |
+|-------------|------|-------------|-------------|
+| `status` | texto | — | Filtra por estado: `pendiente`, `confirmada` o `cancelada`. Ej: `status=pendiente` |
+| `page` | entero ≥ 1 | `1` | Página a devolver |
+| `limit` | entero entre 1 y 100 | `9` | Cantidad de resultados por página |
+| `sortBy` | texto | `createdAt` | Campo de orden: `clientName`, `clientEmail`, `date`, `time`, `status`, `createdAt` o `updatedAt` |
+| `order` | `asc` / `desc` | `asc` | Sentido del orden |
+
+Se pueden combinar todos los parámetros. Ejemplos:
+
+- Filtro por estado: `GET /api/bookings?status=confirmada`
+- Paginación: `GET /api/bookings?page=2&limit=9`
+- Ordenamiento: `GET /api/bookings?sortBy=date&order=desc`
+- Combinado: `GET /api/bookings?status=pendiente&page=2&limit=9&sortBy=date&order=desc`
+
+Los valores inválidos (por ejemplo `page=0`, `limit=abc`, `status=otro` o `sortBy=password`) responden `400`.
+
+La respuesta incluye el listado en `payload` y los metadatos de paginación en el primer nivel, con el mismo formato que `/api/services`:
+
+```json
+{
+  "status": "success",
+  "payload": [
+    {
+      "_id": "6ae64f989addb2965d84db9a",
+      "clientName": "Sofia Lorenzetti",
+      "clientEmail": "sofi.201@gmail.com",
+      "date": "2026-10-28",
+      "time": "15:40",
+      "status": "pendiente",
+      "services": [
+        {
+          "service": {
+            "_id": "6ae64ad59c19a11fc92542bd",
+            "name": "Corte de pelo",
+            "description": "Corte clásico",
+            "duration": 30,
+            "price": 5000,
+            "category": "Peluquería",
+            "available": true
+          },
+          "quantity": 1
+        }
+      ]
+    }
+  ],
+  "totalDocs": 18,
+  "totalPages": 2,
+  "page": 1,
+  "limit": 9,
+  "hasPrevPage": false,
+  "hasNextPage": true,
+  "prevPage": null,
+  "nextPage": 2
+}
+```
 
 ### Consultar una reserva con servicios completos
 

@@ -1,14 +1,22 @@
 import { bookingsService } from '../services/bookings.service.js';
 import { handleControllerError } from '../utils/errors.js';
 
-// GET /api/bookings -- devuelve todas las reservas
+// GET /api/bookings?status=pendiente&page=1&limit=9&sortBy=date&order=asc
 export const getBookings = async (req, res) => {
     try {
-        const bookings = await bookingsService.getBookings();
+        const result = await bookingsService.getBookings(req.query);
 
         return res.status(200).json({
             status: 'success',
-            payload: bookings
+            payload: result.docs,
+            totalDocs: result.totalDocs,
+            totalPages: result.totalPages,
+            page: result.page,
+            limit: result.limit,
+            hasPrevPage: result.hasPrevPage,
+            hasNextPage: result.hasNextPage,
+            prevPage: result.prevPage,
+            nextPage: result.nextPage
         });
     } catch (error) {
         return handleControllerError(res, error, 'Error al obtener las reservas');
