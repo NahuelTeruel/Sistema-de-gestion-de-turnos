@@ -1,5 +1,6 @@
 import MessagesRepository from '../repositories/messages.repository.js';
-import { createHttpError } from '../utils/errors.js';
+import { createMessageSchema, updateMessageSchema } from '../validations/message.validation.js';
+import { validate } from '../validations/validate.js';
 
 // Reglas de negocio de mensajes.
 class MessagesService {
@@ -15,16 +16,16 @@ class MessagesService {
         return this.repository.getById(id);
     }
 
-    async createMessage({ user, message } = {}) {
-        if (!user || !message) {
-            throw createHttpError(400, 'Faltan campos obligatorios');
-        }
+    async createMessage(data = {}) {
+        const validated = validate(createMessageSchema, data);
 
-        return this.repository.create({ user, message });
+        return this.repository.create(validated);
     }
 
-    async updateMessage(id, data) {
-        return this.repository.update(id, data);
+    async updateMessage(id, data = {}) {
+        const validated = validate(updateMessageSchema, data);
+
+        return this.repository.update(id, validated);
     }
 
     async deleteMessage(id) {

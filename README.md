@@ -70,6 +70,7 @@ src/
     validate.js
     service.validation.js
     booking.validation.js
+    message.validation.js
   repositories/
     services.repository.js
     bookings.repository.js
@@ -214,7 +215,7 @@ Ubicados en `src/utils`, agrupan utilidades transversales reutilizables por vari
 
 ### Validaciones (Zod)
 
-Ubicadas en `src/validations`, definen los esquemas de entrada con Zod y se ejecutan en la capa de services, antes de cualquier consulta a MongoDB. No se usan middlewares de validación: los routers solo derivan al controller y los modelos de Mongoose solo definen la estructura de persistencia, sin importar Zod.
+Ubicadas en `src/validations`, definen los esquemas de entrada con Zod y se ejecutan en la capa de services, antes de cualquier consulta a MongoDB. Todos los endpoints de escritura (services, bookings y messages) pasan por un schema. No se usan middlewares de validación: los routers solo derivan al controller y los modelos de Mongoose solo definen la estructura de persistencia, sin importar Zod.
 
 | Archivo | Contenido |
 |---------|-----------|
@@ -222,6 +223,7 @@ Ubicadas en `src/validations`, definen los esquemas de entrada con Zod y se ejec
 | `validate.js` | `validate(schema, data)`: ejecuta `safeParse` y lanza un `400` con el detalle de los campos inválidos |
 | `service.validation.js` | `createServiceSchema`, `updateServiceSchema` |
 | `booking.validation.js` | `createBookingSchema`, `addServiceToBookingSchema` |
+| `message.validation.js` | `createMessageSchema`, `updateMessageSchema` |
 
 Esquemas aplicados:
 
@@ -231,6 +233,8 @@ Esquemas aplicados:
 | PUT `/api/services/:sid` | `updateServiceSchema` | Todos los campos opcionales, pero debe venir al menos uno válido |
 | POST `/api/bookings` | `createBookingSchema` | `clientName`, `clientEmail` (formato email), `date` (`YYYY-MM-DD` real), `time` (`HH:mm`) y `status` opcional (`pendiente`, `confirmada`, `cancelada`) |
 | POST `/api/bookings/:bid/services/:sid` | `addServiceToBookingSchema` | `bid` y `sid` con formato de ObjectId (24 caracteres hexadecimales) |
+| POST `/api/messages` | `createMessageSchema` | `user` y `message` obligatorios, textos no vacíos |
+| PUT `/api/messages/:mid` | `updateMessageSchema` | Todos los campos opcionales, pero debe venir al menos uno válido |
 
 Si la validación falla, el service lanza un `400` y el controller responde con el formato de error habitual:
 
@@ -276,8 +280,8 @@ Ubicado en `src/services/messages.service.js`, contiene las reglas de negocio de
 |--------|-------------|
 | `getMessages()` | Devuelve todos los mensajes en orden cronológico |
 | `getMessageById(mid)` | Devuelve un mensaje por su id |
-| `createMessage(data)` | Valida los campos obligatorios y crea un mensaje |
-| `updateMessage(mid, data)` | Actualiza los datos de un mensaje |
+| `createMessage(data)` | Valida el body con `createMessageSchema` y crea un mensaje |
+| `updateMessage(mid, data)` | Valida el body con `updateMessageSchema` y actualiza los datos de un mensaje |
 | `deleteMessage(mid)` | Elimina un mensaje |
 
 ## Modelos de datos
